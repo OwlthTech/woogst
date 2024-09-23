@@ -1,0 +1,12 @@
+/**
+ * All of the CSS for your admin-specific functionality should be
+ * included in this file.
+ */
+ .wc-action-button-shipped::after {
+    font-family: Dashicons;
+    content: "\f16b"; /* Dashicon code for the car icon */
+}
+.invoice::after {
+    font-family: Dashicons;
+    content: "\f193";
+}

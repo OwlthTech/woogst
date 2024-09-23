@@ -216,6 +216,71 @@ function schedule_report() {
 }
 
 
+if(!function_exists("generate_order_csv")):
+function generate_order_csv($order_ids, $output_to_browser = true)
+{
+    // Prepare CSV headers
+    $header = ['Date', 'OrderId', 'Customer', 'SKU', 'Product', 'Quantity', 'Price', 'Total Tax', 'GST Number', 'GST Trade Name'];
+    $data = [$header];
+
+    foreach ($order_ids as $order_id) {
+        $order = wc_get_order($order_id);
+        $order_data = $order->get_data();
+        $order_items = $order->get_items();
+        $billing_gst_number = $order->get_meta('_billing_gst_number', true);
+        $billing_gst_trade_name = $order->get_meta('_billing_gst_trade_name', true);
+
+        foreach ($order_items as $order_item) {
+            $product_sku = '';
+            $product_id = $order_item->get_product_id();
+
+            if ($product_id) {
+                $product = wc_get_product($product_id);
+                $product_sku = $product->get_sku();
+            }
+
+            $data[] = [
+                $order->get_date_created()->format('m/d/Y'),
+                $order_id,
+                sprintf('%s %s', $order_data['shipping']['first_name'], $order_data['shipping']['last_name']),
+                $product_sku,
+                $order_item->get_name(),
+                $order_item->get_quantity(),
+                $order_item->get_total(),
+                $order->get_total_tax(),
+                $billing_gst_number,
+                $billing_gst_trade_name
+            ];
+        }
+    }
+
+    if ($output_to_browser) {
+        // Output CSV to browser for download
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=orders.csv');
+        $out = fopen('php://output', 'w');
+        foreach ($data as $row) {
+            fputcsv($out, $row);
+        }
+        fclose($out);
+        exit;
+    } else {
+        // Save CSV to file (used in scheduled email attachment)
+        $upload_dir = wp_upload_dir();
+        $csv_file_path = $upload_dir['basedir'] . '/woogst-tax-report-' . date('Y-m') . '.csv';
+        $out = fopen($csv_file_path, 'w');
+        foreach ($data as $row) {
+            fputcsv($out, $row);
+        }
+        fclose($out);
+        return $csv_file_path;
+    }
+}
+
+endif;
+
+
+
 // The main instance
 if (!function_exists('woogst_report')) {
     /**
@@ -230,3 +295,5 @@ if (!function_exists('woogst_report')) {
         return GstReport::get_instance();
     }
 }
+
+

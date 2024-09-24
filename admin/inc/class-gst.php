@@ -306,108 +306,6 @@ if (!function_exists('vat_to_gst_replacement')) {
 }
 
 
-/**
- * Adding two GST fields into Billing fields ( gst_trade_name, gst_number )
- * @since 1.0.0
- * @param   array       $address    array of an address fields
- * @param   object      $order      current order object
- * @return mixed
- */
-if (!function_exists('add_gst_to_woocommerce_order_fields')):
-      function add_gst_to_woocommerce_order_fields($address, $order)
-      {
-            $address['gst_trade_name'] = $order->get_meta('_billing_gst_trade_name');
-            $address['gst_number'] = $order->get_meta('_billing_gst_number');
-
-            return $address;
-      }
-endif;
-
-
-
-/**
- * Adding two GST fields into Billing fields ( gst_trade_name, gst_number )
- * @since 1.0.0
- * @param   array       $billing_fields    billing fields
- * @return array 
- */
-if (!function_exists('add_gst_to_woocommerce_admin_billing_fields')):
-      function add_gst_to_woocommerce_admin_billing_fields($billing_fields)
-      {
-            // GST Holder Name
-            $billing_fields['gst_trade_name'] = array(
-                  'label' => __('GST Holder Name', 'woocommerce'),
-                  'show' => true,
-            );
-
-            // GST Number
-            $billing_fields['gst_number'] = array(
-                  'label' => __('GST Number', 'woocommerce'),
-                  'show' => true,
-            );
-
-            return $billing_fields;
-      }
-endif;
-
-
-/**
- * Single order edit - validate & save with notice
- * @since 1.0.0
- * @param   string       $order_id    id of an order
- * @param   string       $post_data    (not in use)
- * @return void 
- */
-if (!function_exists('save_and_validate_custom_gst_billing_fields')):
-      function save_and_validate_custom_gst_billing_fields($order_id, $post_data)
-      {
-            // Get the order object
-            $order = wc_get_order($order_id);
-
-            // Define the GST pattern for validation
-            $gst_pattern = '/^[0-9]{2}[A-Z]{3}[ABCFGHLJPTF]{1}[A-Z]{1}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/';
-
-            // HPOS check
-            $is_hpos_enabled = is_hpos_enabled();
-
-            // Sanitize and validate the GST Number if it is provided
-            if (isset($_POST['_billing_gst_number'])) {
-                  $gst_number = sanitize_text_field($_POST['_billing_gst_number']);
-
-                  if (!preg_match($gst_pattern, $gst_number)) {
-                        // Show an error and stop execution
-                        WC_Admin_Meta_Boxes::add_error(__('Invalid GST Number. Please enter a valid GST Number.', 'woocommerce'));
-                        exit;
-                  }
-
-                  // Update the GST Number if validation passes
-                  if ($is_hpos_enabled) {
-                        $order->update_meta_data('_billing_gst_number', $gst_number);
-                  } else {
-                        update_post_meta($order_id, '_billing_gst_number', $gst_number);
-                  }
-            }
-
-            // Save the GST Holder Name if it is provided
-            if (isset($_POST['_billing_gst_trade_name'])) {
-                  $gst_holder_name = sanitize_text_field($_POST['_billing_gst_trade_name']);
-
-                  if ($is_hpos_enabled) {
-                        $order->update_meta_data('_billing_gst_trade_name', $gst_holder_name);
-                  } else {
-                        update_post_meta($order_id, '_billing_gst_trade_name', $gst_holder_name);
-                  }
-            }
-
-            if ($is_hpos_enabled) {
-                  $order->save();
-            }
-            // Add a success message
-//     wc_add_notice( __( 'GST details have been successfully updated.', 'woocommerce' ) );
-      }
-endif;
-
-
 
 /**
  * Order list - column header
@@ -518,6 +416,104 @@ if (!function_exists('filtered_data_query_args_for_order_list_table')):
 endif;
 
 
-if (!function_exists('')):
 
+/**
+ * Adding two GST fields into Billing fields ( gst_trade_name, gst_number )
+ * @since 1.0.0
+ * @param   array       $address    array of an address fields
+ * @param   object      $order      current order object
+ * @return mixed
+ */
+if (!function_exists('add_gst_to_woocommerce_order_fields')):
+      function add_gst_to_woocommerce_order_fields($address, $order)
+      {
+            $address['gst_trade_name'] = $order->get_meta('_billing_gst_trade_name');
+            $address['gst_number'] = $order->get_meta('_billing_gst_number');
+
+            return $address;
+      }
 endif;
+
+
+
+/**
+ * Adding two GST fields into Billing fields ( gst_trade_name, gst_number )
+ * @since 1.0.0
+ * @param   array       $billing_fields    billing fields
+ * @return array 
+ */
+if (!function_exists('add_gst_to_woocommerce_admin_billing_fields')):
+      function add_gst_to_woocommerce_admin_billing_fields($billing_fields)
+      {
+            // GST Holder Name
+            $billing_fields['gst_trade_name'] = array(
+                  'label' => __('GST Holder Name', 'woocommerce'),
+                  'show' => true,
+            );
+
+            // GST Number
+            $billing_fields['gst_number'] = array(
+                  'label' => __('GST Number', 'woocommerce'),
+                  'show' => true,
+            );
+
+            return $billing_fields;
+      }
+endif;
+
+
+/**
+ * Single order edit - validate & save with notice
+ * @since 1.0.0
+ * @param   string       $order_id    id of an order
+ * @param   string       $post_data    (not in use)
+ * @return void 
+ */
+if (!function_exists('save_and_validate_custom_gst_billing_fields')):
+      function save_and_validate_custom_gst_billing_fields($order_id, $post_data)
+      {
+            // Get the order object
+            $order = wc_get_order($order_id);
+
+            // Define the GST pattern for validation
+            $gst_pattern = '/^[0-9]{2}[A-Z]{3}[ABCFGHLJPTF]{1}[A-Z]{1}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/';
+
+            // HPOS check
+            $is_hpos_enabled = is_hpos_enabled();
+
+            // Save the GST Holder Name if it is provided
+            if (isset($_POST['_billing_gst_trade_name'])) {
+                  $gst_holder_name = sanitize_text_field($_POST['_billing_gst_trade_name']);
+
+                  if ($is_hpos_enabled) {
+                        $order->update_meta_data('_billing_gst_trade_name', $gst_holder_name);
+                  } else {
+                        update_post_meta($order_id, '_billing_gst_trade_name', $gst_holder_name);
+                  }
+            }
+
+            // Sanitize and validate the GST Number if it is provided
+            if (isset($_POST['_billing_gst_number'])) {
+                  $gst_number = sanitize_text_field($_POST['_billing_gst_number']);
+
+                  if (!preg_match($gst_pattern, $gst_number)) {
+                        // Show an error and stop execution
+                        return WC_Admin_Meta_Boxes::add_error(__('Invalid GST Number. Please enter a valid GST Number.', 'woocommerce'));
+                  }
+
+                  // Update the GST Number if validation passes
+                  if ($is_hpos_enabled) {
+                        $order->update_meta_data('_billing_gst_number', $gst_number);
+                  } else {
+                        update_post_meta($order_id, '_billing_gst_number', $gst_number);
+                  }
+            }
+
+
+            if ($is_hpos_enabled) {
+                  $order->save();
+            }
+
+      }
+endif;
+

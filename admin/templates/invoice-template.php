@@ -1,29 +1,40 @@
 <?php
 // Get order details
-$order_id = $order->get_id();
-$order_date = $order->get_date_created()->format('Y-m-d');
-$order_total = $order->get_total();
-$order_billing_name = $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
-$billing_email = $order->get_billing_email();
-$billing_phone = $order->get_billing_phone();
+// $order_id = $order->get_id();
+// $order_date = $order->get_date_created()->format('Y-m-d');
 
-// Get billing address fields
-$billing_address_1 = get_post_meta($order_id, '_billing_address_1', true);
-$billing_city = get_post_meta($order_id, '_billing_city', true);
-$billing_postcode = get_post_meta($order_id, '_billing_postcode', true);
-$billing_country = get_post_meta($order_id, '_billing_country', true);
+$ordered_items = $order->get_items();
+
+// $order_total = $order->get_total();
+// $order_billing_name = $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
+// $billing_email = $order->get_billing_email();
+// $billing_phone = $order->get_billing_phone();
+
+// // Get billing address fields
+// $billing_address_1 = get_post_meta($order_id, '_billing_address_1', true);
+// $billing_city = get_post_meta($order_id, '_billing_city', true);
+// $billing_postcode = get_post_meta($order_id, '_billing_postcode', true);
+// $billing_country = get_post_meta($order_id, '_billing_country', true);
+
+$store_gst = get_option('owlth-wp-plugin')['store_gst_number'];
+
+$shipping_total = $order->get_shipping_total();
+
+$order_fees = $order->get_items('fee');
+
+$discount_total = $order->get_discount_total();
 
 // Custom meta fields (e.g., GST number)
 $claim_gst = $order->get_meta('_billing_claim_gst', true);
 if ($claim_gst) {
     $gst_holder_name = $order->get_meta('_billing_gst_trade_name', true);
     if (empty($gst_holder_name)) {
-        $gst_holder_name = get_post_meta($order->get_id(), '_billing_gst_trade_name', true);
+        $gst_holder_name = get_post_meta($order_id, '_billing_gst_trade_name', true);
     }
 
     $gst_number = $order->get_meta('_billing_gst_number', true);
     if (empty($gst_number)) {
-        $gst_number = get_post_meta($order->get_id(), '_billing_gst_number', true);
+        $gst_number = get_post_meta($order_id, '_billing_gst_number', true);
     }
 }
 $custom_logo_id = get_theme_mod('custom_logo');
@@ -187,7 +198,7 @@ $logo = wp_get_attachment_image_src($custom_logo_id, 'full');
                                 ?>
                             </td>
                             <td>
-                                <p><?php _e('Invoice #:', 'owlth-invoice-packaging-slip'); ?>
+                                <p><?php _e('Invoice #:', 'woogst'); ?>
                                     <?php echo esc_html($order->get_order_number()); ?>
                                 </p>
                                 <p><?php echo date_i18n(get_option('date_format'), strtotime($order->get_date_created())); ?>
@@ -208,9 +219,9 @@ $logo = wp_get_attachment_image_src($custom_logo_id, 'full');
                                 <td>
                                     <p><?php echo get_bloginfo('name'); ?></p>
                                     <!-- store_gst_number -->
-                                    <?php if ($store_gst = get_option('owlth-wp-plugin')['store_gst_number']): ?>
+                                    <?php if ($store_gst): ?>
                                         <p style="font-size: x-small;">
-                                            <b><?php _e('GST:', 'owlth-invoice-packaging-slip'); ?></b>
+                                            <b><?php _e('GST:', 'woogst'); ?></b>
                                             <?php echo esc_html($store_gst); ?>
                                         </p>
                                     <?php endif; ?>
@@ -221,7 +232,7 @@ $logo = wp_get_attachment_image_src($custom_logo_id, 'full');
                                         <p><?php echo esc_html($gst_holder_name); ?>
                                         </p>
                                         <p style="font-size: x-small;">
-                                            <b><?php _e('GST:', 'owlth-invoice-packaging-slip'); ?></b>
+                                            <b><?php _e('GST:', 'woogst'); ?></b>
                                             <?php echo esc_html($gst_number); ?>
                                         </p>
                                 </td>
@@ -236,13 +247,13 @@ $logo = wp_get_attachment_image_src($custom_logo_id, 'full');
                 <td colspan="2">
                     <table cellpadding="0" cellspacing="0">
                         <tr class="heading">
-                            <td><?php _e('Item', 'owlth-invoice-packaging-slip'); ?></td>
-                            <td><?php _e('Price', 'owlth-invoice-packaging-slip'); ?></td>
+                            <td><?php _e('Item', 'woogst'); ?></td>
+                            <td><?php _e('Price', 'woogst'); ?></td>
                         </tr>
 
                         <!-- Loop through order items -->
                         <?php
-                        foreach ($order->get_items() as $item_id => $item) {
+                        foreach ($ordered_items as $item_id => $item) {
                             $product = $item->get_product();
                             ?>
                             <tr class="item">
@@ -260,6 +271,14 @@ $logo = wp_get_attachment_image_src($custom_logo_id, 'full');
                             <td colspan="2">
                                 <table cellpadding="0" cellspacing="0">
 
+                                    <!-- Sub total -->
+                                    <tr class="sub-total">
+                                        <td style="text-align: right;">
+                                            <?php _e('Sub total:', 'woogst'); ?>
+                                        </td>
+                                        <td><?php echo wc_price($order->get_subtotal()); ?></td>
+                                    </tr>
+
                                     <!-- Taxes (Display if taxes are present) -->
                                     <?php if ($order->get_total_tax() > 0): ?>
                                         <?php
@@ -274,26 +293,42 @@ $logo = wp_get_attachment_image_src($custom_logo_id, 'full');
                                         <?php } ?>
                                     <?php endif; ?>
 
-                                    <tr class="sub-total">
-                                        <td style="text-align: right;">
-                                            <?php _e('Sub total:', 'owlth-invoice-packaging-slip'); ?>
-                                        </td>
-                                        <td><?php echo wc_price($order->get_subtotal()); ?></td>
-                                    </tr>
+                                    <!-- Shipping total -->
+                                    <?php if ($shipping_total > 0): ?>
+                                            <tr class="tax">
+                                                <td style="text-align: right;"><?php echo __('Shipping cost', 'woogst') . ': '; ?></td>
+                                                <td><?php echo wc_price($shipping_total) . '<br>'; ?></td>
+                                            </tr>
+                                    <?php endif; ?>
+
+                                    <!-- Order fees -->
+                                    <?php if (array_count_values($order_fees) > 0): 
+                                        foreach( $order_fees as $item_id => $item_fee ):
+                                            // The fee name
+                                            $fee_name = $item_fee->get_name();
+                                            // The fee total amount
+                                            $fee_total = $item_fee->get_total();
+                                        ?>
+                                            <tr class="tax">
+                                                <td style="text-align: right;"><?php echo esc_html($fee_name) . ': '; ?></td>
+                                                <td><?php echo wc_price($fee_total) . '<br>'; ?></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
 
                                     <!-- If coupon applied -->
-                                    <?php if ($order->get_discount_total() > 0): ?>
+                                    <?php if ($discount_total > 0): ?>
                                         <tr class="discount">
                                             <td style="text-align: right;">
-                                                <?php _e('Coupon discount:', 'owlth-invoice-packaging-slip'); ?>
+                                                <?php _e('Coupon discount:', 'woogst'); ?>
                                             </td>
-                                            <td><?php echo wc_price($order->get_discount_total()); ?></td>
+                                            <td><?php echo wc_price($discount_total); ?></td>
                                         </tr>
                                     <?php endif; ?>
 
                                     <tr class="total">
                                         <td style="text-align: right;">
-                                            <?php _e('Total:', 'owlth-invoice-packaging-slip'); ?>
+                                            <?php _e('Total:', 'woogst'); ?>
                                         </td>
                                         <td><?php echo wc_price($order->get_total()); ?></td>
                                     </tr>
@@ -309,12 +344,16 @@ $logo = wp_get_attachment_image_src($custom_logo_id, 'full');
                 <td colspan="2">
                     <table cellpadding="0" cellspacing="0">
                         <tr class="heading">
-                            <td><?php _e('Payment Method', 'owlth-invoice-packaging-slip'); ?></td>
-                            <td><?php _e('Status', 'owlth-invoice-packaging-slip'); ?></td>
+                            <td><?php _e('Payment Method', 'woogst'); ?></td>
+                            <td><?php _e('Status', 'woogst'); ?></td>
                         </tr>
                         <tr class="details">
                             <td><?php echo esc_html($order->get_payment_method_title()); ?></td>
+                            <?php if($order->get_payment_method() != 'cod'): ?>
                             <td><?php echo esc_html(ucfirst($order->get_status())); ?></td>
+                            <?php else: ?>
+                            <td><?php echo __('Cash on delivery', 'woogst'); ?></td>
+                            <?php endif; ?>
                         </tr>
                     </table>
                 </td>
@@ -323,11 +362,11 @@ $logo = wp_get_attachment_image_src($custom_logo_id, 'full');
             <!-- Address information -->
             <tr class="address-info">
                 <td class="billing">
-                    <b><?php _e('Billing address:', 'owlth-invoice-packaging-slip'); ?></b>
+                    <b><?php _e('Billing address:', 'woogst'); ?></b>
                     <p class="details"><?php echo wp_kses_post($order->get_formatted_billing_address()); ?></p>
                 </td>
                 <td class="shipping">
-                    <b><?php _e('Shipping address:', 'owlth-invoice-packaging-slip'); ?></b>
+                    <b><?php _e('Shipping address:', 'woogst'); ?></b>
                     <p class="details"><?php echo wp_kses_post($order->get_formatted_shipping_address()); ?></p>
                 </td>
             </tr>

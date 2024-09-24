@@ -73,4 +73,34 @@ jQuery(document).ready(function ($) {
         }
     });
 
+
+        // jQuery(document).ready(function($) {
+        var errMsg = '15 Liter item cannot be delivered to your location';
+        function checkForErrors() {
+            let errorFound;
+            $('.woocommerce-error li').each(function() {
+                var errorMessage = $(this).text().trim();
+                if (errorMessage.indexOf(errMsg) !== -1) {
+                    errorFound = true;
+                } else {
+                    errorFound = false; 
+                }
+            });
+            if (errorFound) {
+                $('#place_order').prop('disabled', true);
+            } else {
+                $('#place_order').prop('disabled', false);
+            }
+        }
+
+        checkForErrors();
+        
+        $('form.checkout').on('change', 'input, select, textarea', function() {
+            checkForErrors();
+        });
+        $(document.body).on('updated_checkout', function() {
+            checkForErrors();
+        });
+    // });
+
 });

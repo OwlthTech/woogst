@@ -24,7 +24,7 @@ jQuery(document).ready(function ($) {
         toggleGstFields();
     });
 
-    
+
     var gstPattern = /^[0-9]{2}[A-Z]{3}[ABCFGHLJPTF]{1}[A-Z]{1}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
     // Ensure the input is always in uppercase
@@ -73,41 +73,31 @@ jQuery(document).ready(function ($) {
         }
     });
 
-
-<<<<<<< HEAD
-    	var errMsg = '15 Liter item cannot be delivered to your location';
-=======
-        // jQuery(document).ready(function($) {
-        var errMsg = '15 Liter item cannot be delivered to your location';
->>>>>>> 6d96a0089903edc9b96265727d9b3744f45e6c5b
-        function checkForErrors() {
-            let errorFound;
-            $('.woocommerce-error li').each(function() {
-                var errorMessage = $(this).text().trim();
-                if (errorMessage.indexOf(errMsg) !== -1) {
-                    errorFound = true;
-                } else {
-                    errorFound = false; 
-                }
-            });
-            if (errorFound) {
-                $('#place_order').prop('disabled', true);
+    var errMsg = '15 Liter item cannot be delivered to your location';
+    function checkForErrors() {
+        let errorFound;
+        $('.woocommerce-error li').each(function () {
+            var errorMessage = $(this).text().trim();
+            if (errorMessage.indexOf(errMsg) !== -1) {
+                errorFound = true;
             } else {
-                $('#place_order').prop('disabled', false);
+                errorFound = false;
             }
+        });
+        if (errorFound) {
+            $('#place_order').prop('disabled', true);
+        } else {
+            $('#place_order').prop('disabled', false);
         }
+    }
 
+    checkForErrors();
+
+    $('form.checkout').on('change', 'input, select, textarea', function () {
         checkForErrors();
-        
-        $('form.checkout').on('change', 'input, select, textarea', function() {
-            checkForErrors();
-        });
-        $(document.body).on('updated_checkout', function() {
-            checkForErrors();
-        });
-<<<<<<< HEAD
-=======
-    // });
->>>>>>> 6d96a0089903edc9b96265727d9b3744f45e6c5b
+    });
+    $(document.body).on('updated_checkout', function () {
+        checkForErrors();
+    });
 
 });

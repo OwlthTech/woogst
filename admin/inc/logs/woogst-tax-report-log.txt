@@ -1,34 +1,42 @@
-<<<<<<< HEAD
-[2024-09-25 09:15:51] - schedule_report method called.
-[2024-09-25 09:15:51] - setting new woogst_send_monthly_tax_report.
-[2024-09-25 09:15:52] - schedule_report method called.
-[2024-09-25 09:15:52] - setting new woogst_send_monthly_tax_report.
-[2024-09-25 09:15:57] - schedule_report method called.
-[2024-09-25 09:15:57] - setting new woogst_send_monthly_tax_report.
-[2024-09-25 09:17:46] - CSV generated and saved. Path -> C:/wamp64/www/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-2024-09.csv
-[2024-09-25 09:17:52] - email sent
-[2024-09-25 09:17:52] - Order report post is created -> 7902
-[2024-09-25 09:18:03] - schedule_report method called.
-[2024-09-25 09:18:03] - setting new woogst_send_monthly_tax_report.
-[2024-09-25 09:19:10] - CSV generated and saved. Path -> C:/wamp64/www/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-2024-09.csv
-[2024-09-25 09:19:14] - email sent
-[2024-09-25 09:19:14] - Order report post is created -> 7903
-[2024-09-25 09:21:28] - schedule_report method called.
-[2024-09-25 09:21:28] - setting new woogst_send_monthly_tax_report.
-[2024-09-25 09:22:29] - CSV generated and saved. Path -> C:/wamp64/www/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-2024-09.csv
-[2024-09-25 09:22:29] - Order report post is created -> 7904
-[2024-09-25 09:24:32] - schedule_report method called.
-[2024-09-25 09:24:37] - schedule_report method called.
-[2024-09-25 09:25:16] - schedule_report method called.
-[2024-09-25 09:25:20] - schedule_report method called.
-[2024-09-25 09:25:56] - schedule_report method called.
-[2024-09-25 09:30:51] - schedule_report method called.
-[2024-09-25 09:32:10] - schedule_report method called.
-[2024-09-25 09:32:11] - schedule_report method called.
-[2024-09-25 09:33:45] - schedule_report method called.
-=======
-<<<<<<< HEAD
-=======
-[2024-09-23 09:17:04] - Scheduled monthly tax report
->>>>>>> b44d5717fa6e54be7d668b702476542ea88ff094
->>>>>>> 6d96a0089903edc9b96265727d9b3744f45e6c5b
+[2024-09-25 22:07:55] - schedule_report method called.
+[2024-09-25 22:08:08] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-2024-09.csv
+[2024-09-25 22:08:08] - Order report post is created -> 7929
+[2024-09-25 22:08:08] - schedule_report method called.
+[2024-09-25 22:08:09] - schedule_report method called.
+[2024-09-25 22:08:09] - schedule_report method called.
+[2024-09-25 22:08:14] - schedule_report method called.
+[2024-09-25 22:08:28] - schedule_report method called.
+[2024-09-25 22:08:52] - schedule_report method called.
+[2024-09-25 22:09:07] - schedule_report method called.
+[2024-09-25 22:10:11] - schedule_report method called.
+[2024-09-25 22:10:17] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-2024-09.csv
+[2024-09-25 22:10:17] - Order report post is created -> 7930
+[2024-09-25 22:10:17] - schedule_report method called.
+[2024-09-25 22:10:17] - schedule_report method called.
+[2024-09-25 22:10:21] - schedule_report method called.
+[2024-09-25 22:11:22] - schedule_report method called.
+[2024-09-25 22:11:25] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-2024-09.csv
+[2024-09-25 22:11:25] - Order report post is created -> 7931
+[2024-09-25 22:11:25] - schedule_report method called.
+[2024-09-25 22:11:25] - schedule_report method called.
+[2024-09-25 22:11:28] - schedule_report method called.
+[2024-09-25 22:19:52] - schedule_report method called.
+[2024-09-25 22:20:31] - schedule_report method called.
+[2024-09-25 22:20:47] - schedule_report method called.
+[2024-09-25 22:21:44] - schedule_report method called.
+[2024-09-25 22:25:23] - schedule_report method called.
+[2024-09-25 22:25:56] - schedule_report method called.
+[2024-09-25 22:27:21] - schedule_report method called.
+[2024-09-25 22:27:26] - schedule_report method called.
+[2024-09-25 22:31:01] - schedule_report method called.
+[2024-09-25 22:31:30] - schedule_report method called.
+[2024-09-25 22:31:38] - schedule_report method called.
+[2024-09-25 22:32:03] - schedule_report method called.
+[2024-09-25 22:34:07] - schedule_report method called.
+[2024-09-25 22:34:18] - schedule_report method called.
+[2024-09-25 22:35:12] - schedule_report method called.
+[2024-09-25 22:35:15] - schedule_report method called.
+[2024-09-25 22:35:16] - schedule_report method called.
+[2024-09-25 22:35:53] - schedule_report method called.
+[2024-09-25 22:36:16] - schedule_report method called.
+[2024-09-25 22:38:26] - schedule_report method called.

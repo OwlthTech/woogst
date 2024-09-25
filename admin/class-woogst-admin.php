@@ -20,278 +20,363 @@
  * @subpackage Woogst/admin
  * @author     Owlth Tech <owlthtech@gmail.com>
  */
+require_once plugin_dir_path(__FILE__) . '/inc/class-report-table.php';
 
 class Woogst_Admin
 {
+    public function __construct($plugin_name, $version)
+    {
+        $this->plugin_name = $plugin_name;
+        $this->version = $version;
+        // add_action('admin_menu', [$this, 'add_menu_items']);
+        add_action( 'init', [$this,'order_report_post_type'], 0 );
+
+        add_filter('manage_edit-gst-reports_columns', [$this, 'woogst_gst_reports_columns']);
+        add_action('manage_gst-reports_posts_custom_column', [$this, 'woogst_gst_reports_custom_column'], 10, 2);
+
+        
+        add_filter('post_row_actions', [$this, 'woogst_gst_reports_row_actions'], 10, 2);
+        add_action('admin_post_send_gst_report_email', [$this,'woogst_send_gst_report_email']);
+    }
+
+    /**
+     * Register the stylesheets for the admin area.
+     *
+     * @since    1.0.0
+     */
+    public function enqueue_styles()
+    {
+
+        /**
+         * This function is provided for demonstration purposes only.
+         *
+         * An instance of this class should be passed to the run() function
+         * defined in Woogst_Loader as all of the hooks are defined
+         * in that particular class.
+         *
+         * The Woogst_Loader will then create the relationship
+         * between the defined hooks and the functions defined in this
+         * class.
+         */
+        $has_woocomemrce = class_exists('WooCommerce');
+        if (!$has_woocomemrce) {
+            return;
+        }
+        $screen = get_current_screen();
+        $screen_id = $screen ? $screen->id : '';
+
+        if ($screen_id === wc_get_page_screen_id('shop-order')) {
+            wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/woogst-admin.css', array(), $this->version, 'all');
+        }
+
+    }
+
+    /**
+     * Register the JavaScript for the admin area.
+     *
+     * @since    1.0.0
+     */
+    public function enqueue_scripts()
+    {
+
+        /**
+         * This function is provided for demonstration purposes only.
+         *
+         * An instance of this class should be passed to the run() function
+         * defined in Woogst_Loader as all of the hooks are defined
+         * in that particular class.
+         *
+         * The Woogst_Loader will then create the relationship
+         * between the defined hooks and the functions defined in this
+         * class.
+         */
+        $has_woocomemrce = class_exists('WooCommerce');
+        if (!$has_woocomemrce) {
+            return;
+        }
+        $screen = get_current_screen();
+        $screen_id = $screen ? $screen->id : '';
+
+        // Check screen base and page
+        if (class_exists('WooCommerce') && $screen_id === wc_get_page_screen_id('shop-order')) {
+            wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/woogst-admin.js', array('jquery'), $this->version, false);
+        }
+
+    }
 
 
-	/**
-	 * The ID of this plugin.
-	 *
-	 * @since    1.0.0
-	 * @access   private
-	 * @var      string    $plugin_name    The ID of this plugin.
-	 */
-	private $plugin_name;
+    // Register Custom Post Type
+function order_report_post_type() {
 
-	/**
-	 * The version of this plugin.
-	 *
-	 * @since    1.0.0
-	 * @access   private
-	 * @var      string    $version    The current version of this plugin.
-	 */
-	private $version;
+	$labels = array(
+		'name'                  => _x( 'GST Reports', 'Post Type General Name', 'woogst' ),
+		'singular_name'         => _x( 'GST Report', 'Post Type Singular Name', 'woogst' ),
+		'menu_name'             => __( 'WooGST', 'woogst' ),
+		'name_admin_bar'        => __( 'Post Type', 'woogst' ),
+		'archives'              => __( 'Item Archives', 'woogst' ),
+		'attributes'            => __( 'Item Attributes', 'woogst' ),
+		'parent_item_colon'     => __( 'Parent Item:', 'woogst' ),
+		'all_items'             => __( 'All Items', 'woogst' ),
+		'add_new_item'          => __( 'Add New Item', 'woogst' ),
+		'add_new'               => __( 'Add New', 'woogst' ),
+		'new_item'              => __( 'New Item', 'woogst' ),
+		'edit_item'             => __( 'Edit Item', 'woogst' ),
+		'update_item'           => __( 'Update Item', 'woogst' ),
+		'view_item'             => __( 'View Item', 'woogst' ),
+		'view_items'            => __( 'View Items', 'woogst' ),
+		'search_items'          => __( 'Search Item', 'woogst' ),
+		'not_found'             => __( 'Not found', 'woogst' ),
+		'not_found_in_trash'    => __( 'Not found in Trash', 'woogst' ),
+		'featured_image'        => __( 'Featured Image', 'woogst' ),
+		'set_featured_image'    => __( 'Set featured image', 'woogst' ),
+		'remove_featured_image' => __( 'Remove featured image', 'woogst' ),
+		'use_featured_image'    => __( 'Use as featured image', 'woogst' ),
+		'insert_into_item'      => __( 'Insert into item', 'woogst' ),
+		'uploaded_to_this_item' => __( 'Uploaded to this item', 'woogst' ),
+		'items_list'            => __( 'Items list', 'woogst' ),
+		'items_list_navigation' => __( 'Items list navigation', 'woogst' ),
+		'filter_items_list'     => __( 'Filter items list', 'woogst' ),
+	);
+	$capabilities = array(
+		'edit_post'             => 'edit_post',
+		'read_post'             => 'read_post',
+		'delete_post'           => 'delete_post',
+		'edit_posts'            => 'edit_posts',
+		'edit_others_posts'     => 'edit_others_posts',
+		'publish_posts'         => 'publish_posts',
+		'read_private_posts'    => 'read_private_posts',
+	);
+	$args = array(
+        'label'                 => __( 'GST Report', 'woogst' ),
+        'description'           => __( 'Registering post type for gst monthly reports', 'woogst' ),
+        'labels'                => $labels,
+        'supports'              => array( 'title', 'comments', 'trackbacks', 'revisions', 'page-attributes' ),
+        'taxonomies'            => array( 'sale_type' ),
+        'hierarchical'          => false,
+        'public'                => true,  // Ensure it's public to enable editing
+        'show_ui'               => true,
+        'show_in_menu'          => true,
+        'menu_position'         => 5,
+        'menu_icon'             => 'dashicons-money',
+        'capability_type'       => 'post',  // Standard post type capabilities
+        'show_in_admin_bar'     => true,
+        'show_in_nav_menus'     => true,
+        'can_export'            => true,
+        'has_archive'           => true,
+        'exclude_from_search'   => true,
+        'publicly_queryable'    => false,  // You can keep this false if it's an admin-only feature
+        'show_in_rest'          => true,
+        'rest_base'             => 'gst_reports',
+        'rest_controller_class' => 'WOO_GST_Order_Reports',
+    );
+	register_post_type( 'gst-reports', $args );
 
-	/**
-	 * Initialize the class and set its properties.
-	 *
-	 * @since    1.0.0
-	 * @param      string    $plugin_name       The name of this plugin.
-	 * @param      string    $version    The version of this plugin.
-	 */
-	public function __construct($plugin_name, $version)
-	{
-
-		$this->plugin_name = $plugin_name;
-		$this->version = $version;
-
-		// Add custom columns to order list
-		add_filter('manage_edit-shop_order_columns', 'add_admin_order_list_custom_column', 20);
-		add_filter('manage_woocommerce_page_wc-orders_columns', 'add_admin_order_list_custom_column', 20);
-
-		add_action( 'init', 'register_order_reports_cpt' );
-		
-		add_filter('manage_order-reports_posts_columns', 'set_custom_order_reports_columns');
-		add_action('manage_order-reports_posts_custom_column', 'custom_order_reports_column', 10, 2);
-		
-		add_filter('post_row_actions', 'custom_order_reports_row_actions', 10, 2);
-
-		add_filter('bulk_actions-edit-order-reports', 'register_order_reports_bulk_actions');
-		add_filter('handle_bulk_actions-edit-order-reports', 'handle_order_reports_bulk_actions', 10, 3);
-
-		add_action('add_meta_boxes', 'order_reports_add_meta_boxes');
-
-	}
-
-	/**
-	 * Register the stylesheets for the admin area.
-	 *
-	 * @since    1.0.0
-	 */
-	public function enqueue_styles()
-	{
-
-		/**
-		 * This function is provided for demonstration purposes only.
-		 *
-		 * An instance of this class should be passed to the run() function
-		 * defined in Woogst_Loader as all of the hooks are defined
-		 * in that particular class.
-		 *
-		 * The Woogst_Loader will then create the relationship
-		 * between the defined hooks and the functions defined in this
-		 * class.
-		 */
-		$has_woocomemrce = class_exists('WooCommerce');
-		if (!$has_woocomemrce) {
-			return;
-		}
-		$screen = get_current_screen();
-		$screen_id = $screen ? $screen->id : '';
-
-		if ($screen_id === wc_get_page_screen_id('shop-order')) {
-			wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/woogst-admin.css', array(), $this->version, 'all');
-		}
-
-	}
-
-	/**
-	 * Register the JavaScript for the admin area.
-	 *
-	 * @since    1.0.0
-	 */
-	public function enqueue_scripts()
-	{
-
-		/**
-		 * This function is provided for demonstration purposes only.
-		 *
-		 * An instance of this class should be passed to the run() function
-		 * defined in Woogst_Loader as all of the hooks are defined
-		 * in that particular class.
-		 *
-		 * The Woogst_Loader will then create the relationship
-		 * between the defined hooks and the functions defined in this
-		 * class.
-		 */
-		$has_woocomemrce = class_exists('WooCommerce');
-		if (!$has_woocomemrce) {
-			return;
-		}
-		$screen = get_current_screen();
-		$screen_id = $screen ? $screen->id : '';
-
-		// Check screen base and page
-		if (class_exists('WooCommerce') && $screen_id === wc_get_page_screen_id('shop-order')) {
-			wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/woogst-admin.js', array('jquery'), $this->version, false);
-		}
-
-	}
-
-	
 }
 
-function register_order_reports_cpt() {
-    $labels = array(
-        'name'               => _x( 'Order Reports', 'post type general name' ),
-        'singular_name'      => _x( 'Order Report', 'post type singular name' ),
-        'menu_name'          => _x( 'Order Reports', 'admin menu' ),
-        'name_admin_bar'     => _x( 'Order Report', 'add new on admin bar' ),
-        'add_new'            => _x( 'Add New', 'report' ),
-        'add_new_item'       => __( 'Add New Report' ),
-        'new_item'           => __( 'New Report' ),
-        'edit_item'          => __( 'Edit Report' ),
-        'view_item'          => __( 'View Report' ),
-        'all_items'          => __( 'All Reports' ),
-        'search_items'       => __( 'Search Reports' ),
-        'not_found'          => __( 'No reports found.' ),
-        'not_found_in_trash' => __( 'No reports found in Trash.' )
-    );
 
-    $args = array(
-        'labels'             => $labels,
-        'public'             => false,  // Not publicly accessible
-        'exclude_from_search'=> true,
-        'publicly_queryable' => false,
-        'show_ui'            => true,   // Visible in admin interface
-        'show_in_menu'       => true,
-        'query_var'          => true,
-        'rewrite'            => array( 'slug' => 'order-reports' ),
-        'capability_type'    => 'post',
-        'has_archive'        => false,
-        'hierarchical'       => false,
-        'menu_position'      => 25,
-        'supports'           => array( 'title', 'editor', 'custom-fields' ), // You can add more if needed
-        'capabilities'       => array(
-            'edit_posts'          => 'manage_options', // Only admins can edit and view
-            'edit_others_posts'   => 'manage_options',
-            'delete_posts'        => 'manage_options',
-            'delete_others_posts' => 'manage_options',
-            'read_private_posts'  => 'manage_options',
-            'publish_posts'       => 'manage_options',
-        ),
-    );
 
-    register_post_type( 'order-reports', $args );
-}
-
-// Add custom columns to 'order-reports' table in the admin
-function set_custom_order_reports_columns($columns) {
-    $columns = array(
-        'cb'              => '<input type="checkbox" />', // Checkbox for bulk actions
-        'title'           => __('Report Title'),
-        'report_date'     => __('Report Date'),
-        'email_status'    => __('Email Status'),
-        'csv_file'        => __('CSV File'),
-        'date'            => __('Date'), // Use default date column
-    );
+// Add custom columns to the GST Reports post type
+function woogst_gst_reports_columns($columns) {
+    // Remove some default columns if not needed
+    unset($columns['date']);
+    
+    // Add custom columns
+    $columns['email_status'] = __('Email Status', 'woogst');
+    $columns['report_date'] = __('Report Date', 'woogst');
+    
     return $columns;
 }
 
-// Populate the custom columns with data
-function custom_order_reports_column($column, $post_id) {
-	
+
+// Populate custom columns with data
+function woogst_gst_reports_custom_column($column, $post_id) {
     switch ($column) {
-        case 'report_date':
-            // Retrieve and display report date (custom meta field)
-            $report_date = get_post_meta($post_id, 'report_date', true);
-            echo $report_date ? esc_html($report_date) : 'N/A';
-            break;
-
         case 'email_status':
-            // Retrieve and display email status (custom meta field)
+            // Fetch the email_status from post meta
             $email_status = get_post_meta($post_id, 'email_status', true);
-            echo $email_status ? esc_html($email_status) : 'N/A';
+            echo esc_html($email_status ? $email_status : __('Not set', 'woogst'));
             break;
 
-        case 'csv_file':
-            // Retrieve and display link to CSV file
-            $csv_file_path = get_post_meta($post_id, 'csv_file_path', true);
-            if ($csv_file_path) {
-                echo '<a href="' . $csv_file_path . '">Download CSV</a>';
-            } else {
-                echo 'N/A';
-            }
+        case 'report_date':
+            // Assuming you have a custom field 'report_date'
+            $report_date = get_post_meta($post_id, 'report_date', true);
+            echo esc_html($report_date ? $report_date : __('No Date', 'woogst'));
             break;
     }
 }
 
 
 
-// Add custom row actions to the 'order-reports' table
-function custom_order_reports_row_actions($actions, $post) {
-    if ($post->post_type == 'order-reports') {
-        $csv_file_path = get_post_meta($post->ID, 'csv_file_path', true);
-		error_log($post->ID);
-
-        // Add a custom action to view the CSV file
-        if ($csv_file_path) {
-            $actions['view_csv'] = '<a href="' . esc_url($csv_file_path) . '" target="_blank">View CSV</a>';
-        }
+// Add custom actions to the post row actions
+function woogst_gst_reports_row_actions($actions, $post) {
+    if ($post->post_type == 'gst-reports') {
+        // Add custom action links
+        $actions['send_email'] = '<a href="' . admin_url('admin-post.php?action=send_gst_report_email&post_id=' . $post->ID) . '">' . __('Send Email', 'woogst') . '</a>';
     }
-
     return $actions;
 }
 
 
-// Register custom bulk actions for 'order-reports'
-function register_order_reports_bulk_actions($bulk_actions) {
-    $bulk_actions['download_csv'] = __('Download CSV');
-    return $bulk_actions;
+      // Admin notice
+      function set_wp_admin_notice($message, $type)
+      {
+            wp_admin_notice($message, ['type' => $type, 'dismissible' => true]);
+      }
+
+// Handle the "Send Email" action
+function woogst_send_gst_report_email() {
+    // Verify post ID is set
+    if (isset($_GET['post_id'])) {
+        $post_id = intval($_GET['post_id']);
+        
+        // Get the email address and email content (adjust to your needs)
+        $email_status = get_post_meta($post_id, 'email_status', true);
+        $report_title = get_the_title($post_id);
+        
+        // For example purposes, let's assume we're sending to a hardcoded email
+        $to = 'owlthtech@gmail.com';
+        $subject = 'GST Report: ' . $report_title;
+        $message = 'Here is the GST report: ' . $report_title . '. Status: ' . $email_status;
+        
+        // Send the email
+        $email = wp_mail($to, $subject, $message);
+
+        if($email) {
+            $this->set_wp_admin_notice(__('Email sent successfully.'), 'success');
+        } else {
+            $this->set_wp_admin_notice(__('Unable to send email!'), 'error');
+        }
+        
+        // Redirect back to the admin page
+        wp_redirect(admin_url('edit.php?post_type=gst-reports'));
+        exit;
+    }
 }
 
-// Handle the custom bulk action
-function handle_order_reports_bulk_actions($redirect_to, $doaction, $post_ids) {
-    if ($doaction !== 'download_csv') {
-        return $redirect_to;
+
+
+
+
+/***
+ * 
+ * 
+ * 
+ */
+
+
+    public function add_menu_items()
+    {
+        global $gst_report_menu;
+
+        // Add menu item
+        $gst_report_menu = add_menu_page(
+            __('WooGST', 'woogst'),
+            __('WooGST', 'woogst'),
+            'manage_options',
+            'woo-gst-reports',
+            array($this, 'render_woo_gst_report_list_table_page'),
+            'dashicons-money'
+        );
+
+        // Add the screen option to menu item ($gst_report_menu) page
+        add_action("load-$gst_report_menu", array($this, 'add_screen_options'));
+
     }
 
-    // Loop through the selected reports and download their CSVs
-    foreach ($post_ids as $post_id) {
-        $csv_file_path = get_post_meta($post_id, 'csv_file_path', true);
-        if ($csv_file_path) {
-            // Add your logic to handle CSV download (or zip multiple files)
+
+    /**
+     * Add screen options to the plugin page.
+     */
+    public function add_screen_options()
+    {
+        global $list_table;
+
+        $screen = get_current_screen();
+        if (!is_object($screen) || $screen->id !== 'toplevel_page_woo-gst-reports') {
+            return;
+        }
+
+        $args = [
+            'label' => __('Reports per page', 'woogst'),
+            'default' => 5,
+            'option' => 'reports_per_page'
+        ];
+        add_screen_option('per_page', $args);
+
+        $list_table = new Woo_Gst_Report_Table();
+
+    }
+
+    /**
+     * Render the list page.
+     */
+    public function render_woo_gst_report_list_table_page()
+    {
+        global $list_table;
+        $list_table = new Woo_Gst_Report_Table();
+        echo '<div class="wrap">';
+        echo '<h1 class="wp-heading-inline">' . __('Monthly GST Reports', 'woogst') . '</h1>';
+        echo "<form id='woogst-report-form' method='post'>";
+        // wp_nonce_field('woo_gst_reports', '_wpnonce', false);
+        $list_table->prepare_items();
+        $list_table->search_box('search', 'reports');
+        $list_table->display();
+        echo '</form>';
+        echo '</div>';
+
+    }
+
+
+
+
+
+    /**
+     * NOT USING ANYWHERE NOW
+     * Clean up URL parameters after actions.
+     */
+    public function clean_up_admin_url()
+    {
+        // Check if we are on the specific admin page
+        if (is_admin() && isset($_GET['page']) && $_GET['page'] === 'woo-gst-reports') {
+            // Prepare the base URL without unwanted parameters
+            $redirect_url = $this->prepare_redirect_url(admin_url('admin.php?page=woo-gst-reports'));
+
+            // Check if the current URL contains any of the unwanted parameters
+            if (isset($_GET['_wp_http_referer']) || isset($_GET['submission']) || isset($_GET['action2'])) {
+                // Only redirect if unwanted parameters are found
+                wp_redirect($redirect_url);
+                // Stop further execution to prevent loops
+                return;
+            }
         }
     }
 
-    return $redirect_to;
+    /**
+     * Prepare redirect URL with existing query parameters.
+     */
+    public function prepare_redirect_url($base_url)
+    {
+        // Remove specific query parameters if they exist
+        $base_url = remove_query_arg(['_wp_http_referer', 'action2'], $base_url);
+
+        if (!isset($_GET['page'])) {
+            $base_url = add_query_arg('page', sanitize_text_field($_GET['fbf-submissions']), $base_url);
+        }
+
+        // Conditionally add existing parameters like 'orderby', 'order', 's' if they exist
+        if (isset($_GET['orderby'])) {
+            $base_url = add_query_arg('orderby', sanitize_text_field($_GET['orderby']), $base_url);
+        }
+
+        if (isset($_GET['order'])) {
+            $base_url = add_query_arg('order', sanitize_text_field($_GET['order']), $base_url);
+        }
+
+        if (isset($_GET['s']) && !empty(trim($_GET['s']))) {
+            $base_url = add_query_arg('s', sanitize_text_field($_GET['s']), $base_url);
+        }
+
+        return $base_url;
+    }
 }
 
-
-
-// Add a meta box to the 'order-reports' CPT
-function order_reports_add_meta_boxes() {
-    add_meta_box(
-        'order_reports_meta_box',      // ID of the meta box
-        __('Order Report Details'),    // Title of the meta box
-        'order_reports_meta_box_html', // Callback to render the meta box
-        'order-reports',               // Post type where the box will appear
-        'normal',                      // Position
-        'high'                         // Priority
-    );
-}
-
-// Callback function to display the meta box HTML
-function order_reports_meta_box_html($post) {
-    // Retrieve current meta values
-    $csv_file_path = get_post_meta($post->ID, 'csv_file_path', true);
-    $email_status = get_post_meta($post->ID, 'email_status', true);
-    $order_ids = get_post_meta($post->ID, 'order_ids', true);
-
-    ?>
-    <p><strong>CSV File Path:</strong> <a href="<?php echo esc_url(wp_get_attachment_url($csv_file_path)); ?>" target="_blank"><?php echo esc_html($csv_file_path); ?></a></p>
-    <p><strong>Email Status:</strong> <?php echo esc_html($email_status); ?></p>
-    <p><strong>Order IDs:</strong> <?php echo esc_html($order_ids); ?></p>
-    <?php
-}

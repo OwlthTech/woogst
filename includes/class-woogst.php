@@ -192,9 +192,8 @@ class Woogst {
 	}
 
 	private function define_gst_report_hooks() {
-		$woo_gst_report = new GstReport();
-		$this->loader->add_action('init', $woo_gst_report	, 'schedule_report');
-		// $this->loader->add_action('init', $woo_gst_report	, 'schedule_report');
+		$woo_gst_report = woogst_report();
+		$this->loader->add_action('init', $woo_gst_report	, 'init');
 	}
 
 	private function define_invoice_hooks() {

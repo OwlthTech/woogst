@@ -30,7 +30,7 @@ class Woogst_Activator {
 	 * @since    1.0.0
 	 */
 	public static function activate() {
-		// woogst_report()->schedule_report();
+		woogst_report()->schedule_report();
 	}
 
 }

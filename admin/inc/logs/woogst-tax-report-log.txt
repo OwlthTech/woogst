@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [2024-09-25 09:15:51] - schedule_report method called.
 [2024-09-25 09:15:51] - setting new woogst_send_monthly_tax_report.
 [2024-09-25 09:15:52] - schedule_report method called.
@@ -25,3 +26,9 @@
 [2024-09-25 09:32:10] - schedule_report method called.
 [2024-09-25 09:32:11] - schedule_report method called.
 [2024-09-25 09:33:45] - schedule_report method called.
+=======
+<<<<<<< HEAD
+=======
+[2024-09-23 09:17:04] - Scheduled monthly tax report
+>>>>>>> b44d5717fa6e54be7d668b702476542ea88ff094
+>>>>>>> 6d96a0089903edc9b96265727d9b3744f45e6c5b

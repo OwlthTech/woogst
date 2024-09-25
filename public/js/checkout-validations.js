@@ -74,7 +74,12 @@ jQuery(document).ready(function ($) {
     });
 
 
+<<<<<<< HEAD
     	var errMsg = '15 Liter item cannot be delivered to your location';
+=======
+        // jQuery(document).ready(function($) {
+        var errMsg = '15 Liter item cannot be delivered to your location';
+>>>>>>> 6d96a0089903edc9b96265727d9b3744f45e6c5b
         function checkForErrors() {
             let errorFound;
             $('.woocommerce-error li').each(function() {
@@ -100,5 +105,9 @@ jQuery(document).ready(function ($) {
         $(document.body).on('updated_checkout', function() {
             checkForErrors();
         });
+<<<<<<< HEAD
+=======
+    // });
+>>>>>>> 6d96a0089903edc9b96265727d9b3744f45e6c5b
 
 });

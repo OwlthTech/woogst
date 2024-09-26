@@ -78,10 +78,9 @@ class Woogst {
 		$this->set_locale();
 		$this->define_admin_hooks();
 		$this->define_public_hooks();
-		$this->define_gst_hooks();
+		
 		$this->define_invoice_hooks();
 		$this->define_gst_report_hooks();
-
 	}
 
 	/**
@@ -130,9 +129,15 @@ class Woogst {
 		/**
 		 * Main functions files
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/inc/class-gst.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/inc/class-gst-report.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/inc/class-invoice.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/inc/gst/class-gst.php';
+		
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/inc/invoice/class-woogst-invoice.php';
+
+		/**
+		 * Utils
+		 */
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'utils/class-woogst-validator.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'utils/functions-logging.php';
 
 		$this->loader = new Woogst_Loader();
 
@@ -186,14 +191,10 @@ class Woogst {
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
 	}
 
-	private function define_gst_hooks() {
-		$woo_gst = woogst_gst();
-		$this->loader->add_action('init', $woo_gst, 'init');
-	}
 
 	private function define_gst_report_hooks() {
 		$woo_gst_report = woogst_report();
-		$this->loader->add_action('init', $woo_gst_report	, 'init');
+		$this->loader->add_action('init', $woo_gst_report, 'init');
 	}
 
 	private function define_invoice_hooks() {

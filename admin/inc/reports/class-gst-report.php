@@ -43,13 +43,13 @@ class GstReport
 
         // Test action
         add_action('wp_loaded', array($this, 'generate_save_and_send_report'));
+        
     }
 
     /**
      * Schedule the monthly report if not already scheduled.
      */
-    // Custom Cron Recurrences
-    function schedule_report_recurrence($schedules)
+    public function schedule_report_recurrence($schedules)
     {
         $schedules['monthly'] = array(
             'display' => __('Once monthly', 'textdomain'),
@@ -59,7 +59,7 @@ class GstReport
     }
 
     // Display a dismissible admin notice after cron is scheduled for the first time
-    function email_report_schedule_notice()
+    public function email_report_schedule_notice()
     {
         // Check if the cron job has been scheduled and if we need to display the notice
         $timestamp = wp_next_scheduled('woogst_send_monthly_tax_report');
@@ -83,9 +83,9 @@ class GstReport
         // Clear any existing schedule for this event (optional but useful for testing)
         // wp_clear_scheduled_hook('woogst_send_monthly_tax_report');
 
-        $this->log_report_status('schedule_report method called.');
+        log_report_status('schedule_report method called.');
         if (!wp_next_scheduled('woogst_send_monthly_tax_report')) {
-            $this->log_report_status('setting new woogst_send_monthly_tax_report.');
+            log_report_status('setting new woogst_send_monthly_tax_report.');
 
             // Get the WordPress time zone - [production]
             $timezone = new DateTimeZone(wp_timezone_string());
@@ -112,11 +112,60 @@ class GstReport
     /**
      * Generate, save and send the report via email.
      */
-    public function generate_save_and_send_report()
+    public function woogst_report_handler($generate = null, $send_email = null, $month = null, $year = null) {
+        if(is_null($generate)) {
+            $generate = true;
+        }
+        if(is_null($send_email)) {
+            $send_email = true;
+        }
+
+        $order_data = $this->get_monthly_orders($month, $year);
+        $simplified_order_data = array_map(function ($order) {
+            return array(
+                'order_id' => $order['order_id'],  // Only store order IDs
+                'order_total' => $order['order_total'], // Optionally store total amount
+            );
+        }, $order_data);
+        
+        if($generate) {
+            $csv_file_path = $this->generate_csv($order_data, $month, $year);
+        }
+
+        if($send_email) {
+            // Send the email with CSV attachment
+            $to = 'owlthtech@gmail.com';
+            $subject = 'Orgotel Organic - Previous Month Online Order Invoices';
+            $headers = array('Content-Type: text/html; charset=UTF-8');
+            $attachments = array($csv_file_path);
+            $body_content = $this->prepare_email_content($order_data);
+            // $sent = wp_mail($to, $subject, $body_content, $headers, $attachments);
+            $sent = true;
+            // if($sent) {
+            //     log_report_status('email sent');
+            // } else {
+            //     log_report_status('email failed');
+            // }
+        }
+
+        $report_id = wp_insert_post(array(
+            'post_type' => 'gst-reports',
+            'post_title' => 'Order Report for ' . date('F Y'),  // Set the title as the current month
+            'post_content' => $body_content,  // Save the email content in the post
+            'post_status' => 'publish',
+            'meta_input' => array(
+                'csv_file_path' => esc_url_raw($csv_file_path),  // Save the path of the CSV file as meta data
+                'email_status' => sanitize_text_field($sent),   // Save the email status as meta data
+                'order_data' => $simplified_order_data,  // Save the order IDs as meta data
+            ),
+        ));
+
+    }
+    public function generate_save_and_send_report($month = null, $year = null)
     {
         if (isset($_GET['test_report'])) {
             echo "triggered -> generate_save_and_send_report()";
-            $order_data = $this->get_monthly_orders();
+            $order_data = $this->get_monthly_orders($month, $year);
 
             // Extract order IDs and other relevant details from order data for storage
             $simplified_order_data = array_map(function ($order) {
@@ -128,7 +177,7 @@ class GstReport
 
             // Prepare email content and generate CSV
             $email_content = $this->prepare_email_content($order_data);
-            $csv_file_path = $this->generate_csv($order_data);
+            $csv_file_path = $this->generate_csv($order_data, $month, $year);
 
             // Send the email with CSV attachment
             $to = 'owlthtech@gmail.com';
@@ -141,30 +190,29 @@ class GstReport
             $email_status = $sent ? '1' : '0';
 
             // if($sent) {
-            //     $this->log_report_status('email sent');
+            //     log_report_status('email sent');
             // } else {
-            //     $this->log_report_status('email failed');
+            //     log_report_status('email failed');
             // }
 
             // Log the report details in 'gst-reports' CPT
             $report_id = wp_insert_post(array(
                 'post_type' => 'gst-reports',
-                'post_title' => 'Order Report for ' . date('F Y'),  // Set the title as the current month
-                'post_content' => $email_content,  // Save the email content in the post
+                'post_title' => 'Order Report for ' . date('F Y'),
+                'post_content' => $email_content,
                 'post_status' => 'publish',
                 'meta_input' => array(
-                    'csv_file_path' => esc_url_raw($csv_file_path),  // Save the path of the CSV file as meta data
-                    'email_status' => sanitize_text_field($email_status),   // Save the email status as meta data
-                    'order_data' => $simplified_order_data,  // Save the order IDs as meta data
+                    'csv_file_path' => esc_url_raw($csv_file_path),
+                    'email_status' => sanitize_text_field($email_status),
+                    'order_data' => $simplified_order_data,
                 ),
             ));
 
-            $this->log_report_status("Order report post is created -> " . $report_id);
+            log_report_status("Order report post is created -> " . $report_id);
 
             // Cleanup CSV file
             if (file_exists($csv_file_path)) {
-                // unlink($csv_file_path);
-                // error_log("CSV File: ", $csv_file_path);
+                unlink($csv_file_path);
             }
         }
     }
@@ -172,24 +220,33 @@ class GstReport
 
 
     // Function to fetch WooCommerce orders for the previous month and include custom meta fields
-    function get_monthly_orders()
+    function get_monthly_orders($month = null, $year = null)
     {
-        // Get the previous month's start and end dates
-        $first_day_of_last_month = new DateTime('first day of last month 00:00:00');
-        $last_day_of_last_month = new DateTime('last day of last month 23:59:59');
+        // If no month and year are passed, use the previous month and current year as default
+        if (is_null($month)) {
+            $month = date('m', strtotime('first day of last month'));
+        }
 
-        // Query to get orders from the previous month
+        if (is_null($year)) {
+            $year = date('Y', strtotime('first day of last month'));
+        }
+
+        // Get the start and end dates for the specified month and year
+        $first_day_of_month = new DateTime("$year-$month-01 00:00:00");
+        $last_day_of_month = new DateTime($first_day_of_month->format('Y-m-t 23:59:59')); // Get last day of the month
+
+        // Query to get orders from the specified month
         $args = array(
             'post_type' => 'shop_order',
             'post_status' => array_keys(wc_get_order_statuses()),
             'date_query' => array(
-                'after' => $first_day_of_last_month->format('Y-m-d H:i:s'),
-                'before' => $last_day_of_last_month->format('Y-m-d H:i:s'),
+                'after' => $first_day_of_month->format('Y-m-d H:i:s'),
+                'before' => $last_day_of_month->format('Y-m-d H:i:s'),
                 'inclusive' => true,
             ),
             'posts_per_page' => -1, // Retrieve all orders
         );
-
+        
         $orders = get_posts($args);
 
         // Array to store the order details with custom meta fields
@@ -229,8 +286,9 @@ class GstReport
     }
 
     // Function to generate the CSV file with custom meta fields
-    function generate_csv($orders)
+    function generate_csv($orders, $month = null, $year = null)
     {
+
         // File path for the CSV
         $upload_dir = wp_upload_dir();
 
@@ -243,9 +301,18 @@ class GstReport
             }
         }
 
-        // File path for the CSV
-        $file_name = 'woogst-tax-report-' . date('Y-m') . '.csv';
-        $csv_file_path = $reports_dir . $file_name;
+        // If no month and year are passed, use the previous month and current year as default
+        if (is_null($month)) {
+            $month = date('m', strtotime('first day of last month'));
+        }
+
+        if (is_null($year)) {
+            $year = date('Y', strtotime('first day of last month'));
+        }
+
+        // Set the file name based on the passed or default month and year
+        $file_name = "woogst-tax-report-{$year}-{$month}.csv";
+        $csv_file_path = "{$reports_dir}{$file_name}";
 
         // Open file for writing
         $file = fopen($csv_file_path, 'w');
@@ -275,37 +342,9 @@ class GstReport
         // Normalize the file path for URL use (convert backslashes to forward slashes)
         $csv_file_url = $upload_dir['baseurl'] . '/order-reports/' . $file_name;
 
-        $this->log_report_status("CSV generated and saved. Path -> " . $csv_file_url);
+        log_report_status("CSV generated and saved. Path -> $csv_file_url");
         return $csv_file_url;
     }
-
-    // Log the status of the email process
-    function log_report_status($message)
-    {
-        // Check if the logs directory exists, if not, create it
-        if (!file_exists(plugin_dir_path(__FILE__) . 'logs')) {
-            mkdir(plugin_dir_path(__FILE__) . 'logs', 0755, true);
-        }
-
-        // Define the log file path
-        $log_file = plugin_dir_path(__FILE__) . 'logs/woogst-tax-report-log.txt';
-
-        // Get the WordPress timezone setting
-        $timezone = new DateTimeZone(wp_timezone_string());
-
-        // Create a new DateTime object and apply the timezone
-        $time = new DateTime('now', $timezone);
-
-        // Format the date and time
-        $formatted_time = $time->format('Y-m-d H:i:s');
-
-        // Create the log message with the formatted date/time and the custom message
-        $log_message = "[{$formatted_time}] - {$message}" . PHP_EOL;
-
-        // Append the log message to the log file
-        file_put_contents($log_file, $log_message, FILE_APPEND);
-    }
-
 
 }
 

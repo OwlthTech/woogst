@@ -10,6 +10,8 @@
  * @subpackage Woogst/public
  */
 
+require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/woogst-public-functions.php';
+
 /**
  * The public-facing functionality of the plugin.
  *
@@ -51,6 +53,22 @@ class Woogst_Public {
 
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
+
+		/**
+             * Checkout - frontend
+             */
+            // Add in checkout billing fields
+            add_filter('woocommerce_billing_fields', 'gst_fields_add_in_checkout_billing_fields');
+            // Remove optional label
+            add_filter('woocommerce_form_field', 'remove_optional_text_from_gst_fields', 10, 4);
+            // Sanitise and Validate
+            add_filter('woocommerce_checkout_process', 'gst_fields_sanitize_and_validate');
+            // Save in order meta during checkout
+            add_action('woocommerce_checkout_update_order_meta', 'gst_fields_save_in_order_meta');
+            // Add GST details (echo) html in email
+            add_action('woocommerce_email_order_meta', 'gst_fields_add_in_email_display', 10, 3);
+            // VAT to GST replacement
+            add_filter('gettext', 'vat_to_gst_replacement', 20, 3);
 
 	}
 

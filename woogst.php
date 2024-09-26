@@ -17,6 +17,7 @@
  * Plugin URI:        https://owlth.tech
  * Description:       WooCommerce GST Plugin
  * Version:           1.0.0
+ * Requires Plugins: woocommerce
  * Author:            Owlth Tech
  * Author URI:        https://owlth.tech/
  * License:           GPL-2.0+

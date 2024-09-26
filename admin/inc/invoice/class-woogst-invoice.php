@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class WooInvoice
+class WoogstInvoice
 {
     /**
      * Gets an instance of this object.
@@ -44,7 +44,7 @@ class WooInvoice
 // The main instance
 if (!function_exists('woogst_invoice')) {
     /**
-     * Return instance of  WooInvoice class
+     * Return instance of  WoogstInvoice class
      *
      * @since 1.0.0
      *
@@ -52,7 +52,7 @@ if (!function_exists('woogst_invoice')) {
      */
     function woogst_invoice()
     {//phpcs:ignore
-        return WooInvoice::get_instance();
+        return WoogstInvoice::get_instance();
     }
 }
 

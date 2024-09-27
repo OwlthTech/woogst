@@ -322,9 +322,9 @@ function woogst_create_gst_tax_class_action()
                 }
             }
         }
+        set_wp_admin_notice('Created Tax class & tax rates for GST to use.', 'success');
+        wp_redirect(get_admin_url(null, '/admin.php?page=gst-settings'));
     }
-    set_wp_admin_notice('Created Tax class & tax rates for GST to use.', 'success');
-    wp_redirect(get_admin_url(null, '/admin.php?page=gst-settings'));
 }
 
 

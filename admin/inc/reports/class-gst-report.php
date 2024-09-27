@@ -200,7 +200,7 @@ class GstReport
                 'post_type' => 'gst-reports',
                 'post_title' => 'Order Report for ' . date('F Y'),
                 'post_content' => $email_content,
-                'post_status' => 'publish',
+                'post_status' => 'private',
                 'meta_input' => array(
                     'csv_file_path' => esc_url_raw($csv_file_path),
                     'email_status' => sanitize_text_field($email_status),
@@ -222,18 +222,22 @@ class GstReport
     // Function to fetch WooCommerce orders for the previous month and include custom meta fields
     function get_monthly_orders($month = null, $year = null)
     {
-        // If no month and year are passed, use the previous month and current year as default
-        if (is_null($month)) {
-            $month = date('m', strtotime('first day of last month'));
-        }
+        // Use previous month and current year as default if no values are passed
+    if (empty($month) || $month < 1 || $month > 12) {
+        $month = date('m', strtotime('first day of last month'));
+    }
 
-        if (is_null($year)) {
-            $year = date('Y', strtotime('first day of last month'));
-        }
+    if (empty($year) || $year < 1970 || $year > date('Y')) {
+        $year = date('Y', strtotime('first day of last month'));
+    }
 
-        // Get the start and end dates for the specified month and year
+    // Create valid DateTime objects for the first and last day of the month
+    try {
         $first_day_of_month = new DateTime("$year-$month-01 00:00:00");
-        $last_day_of_month = new DateTime($first_day_of_month->format('Y-m-t 23:59:59')); // Get last day of the month
+        $last_day_of_month = new DateTime($first_day_of_month->format('Y-m-t 23:59:59'));
+    } catch (Exception $e) {
+        return new WP_Error('invalid_date', __('Invalid date provided', 'woogst'));
+    }
 
         // Query to get orders from the specified month
         $args = array(

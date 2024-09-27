@@ -82,7 +82,7 @@ function handle_print_invoice() {
         $order = wc_get_order( $order_id );
         
         if ( $order ) {
-            include plugin_dir_path( dirname( __FILE__ ) ) . 'templates/invoice-template.php';
+            include plugin_dir_path( dirname( __FILE__ ) ) . 'templates/invoice/invoice-template.php';
             exit;
         }
     }

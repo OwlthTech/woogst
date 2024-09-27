@@ -34,3 +34,10 @@ class Woogst_Activator {
 	}
 
 }
+
+// Class
+
+// Rate for class
+$rate = WC_Tax::get_rates('GST');
+$rates_for_tax_class = WC_Tax::get_rates_for_tax_class('GST');
+

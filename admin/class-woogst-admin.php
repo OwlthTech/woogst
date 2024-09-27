@@ -33,11 +33,16 @@ class Woogst_Admin
         // Registers 'gst-reports' post type
         add_action('init', [$this, 'register_gst_report_post_type']);
 
+        add_action('admin_menu', [$this, 'woogst_menu']);
+
         // Sets notice using transient options
         add_action('admin_notices', 'woo_gst_admin_notice_message');
 
         // Checks woocommerce installed & activated and sets admin notice
         add_action('admin_notices', 'set_wp_admin_notice_active_woo');
+
+        add_action('init', 'woogst_create_gst_tax_class_action');
+        add_action('init', 'woogst_create_gst_tax_rates');
 
         $woo_gst = woogst_gst();
         $woo_gst->init();
@@ -124,9 +129,9 @@ class Woogst_Admin
             'archives' => __('Item Archives', 'woogst'),
             'attributes' => __('Item Attributes', 'woogst'),
             'parent_item_colon' => __('Parent Item:', 'woogst'),
-            'all_items' => __('All Items', 'woogst'),
+            'all_items' => __('GST Reports', 'woogst'),
             'add_new_item' => __('Add New Item', 'woogst'),
-            'add_new' => __('Add New', 'woogst'),
+            'add_new' => __('Generate Report', 'woogst'),
             'new_item' => __('New Item', 'woogst'),
             'edit_item' => __('Edit Item', 'woogst'),
             'update_item' => __('Update Item', 'woogst'),
@@ -146,13 +151,13 @@ class Woogst_Admin
             'filter_items_list' => __('Filter items list', 'woogst'),
         );
         $capabilities = array(
-            'edit_post' => 'edit_post',
-            'read_post' => 'read_post',
-            'delete_post' => 'delete_post',
-            'edit_posts' => 'edit_posts',
-            'edit_others_posts' => 'edit_others_posts',
-            'publish_posts' => 'publish_posts',
-            'read_private_posts' => 'read_private_posts',
+            'edit_post' => 'manage_options',
+            'read_post' => 'manage_options',
+            'delete_post' => 'manage_options',
+            'edit_posts' => 'manage_options',
+            'edit_others_posts' => 'manage_options',
+            'publish_posts' => 'manage_options',
+            'read_private_posts' => 'manage_options',
         );
         $args = array(
             'label' => __('GST Report', 'woogst'),
@@ -166,7 +171,8 @@ class Woogst_Admin
             'show_in_menu' => true,
             'menu_position' => 5,
             'menu_icon' => 'dashicons-money',
-            'capability_type' => 'post',  // Standard post type capabilities
+            'capability_type' => 'post',
+            'capabilities' => $capabilities,
             'show_in_admin_bar' => true,
             'show_in_nav_menus' => true,
             'can_export' => true,
@@ -182,11 +188,49 @@ class Woogst_Admin
     }
 
 
+    public function woogst_menu()
+    {
+        add_submenu_page(
+            'woocommerce',
+            'WooGST',
+            'GST Settings',
+            'manage_options',
+            'gst-settings',
+            [$this, 'woogst_menu_page_callback']
+        );
+    }
+
+    public function woogst_menu_page_callback()
+    {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        // Check if the form has been submitted
+        if (isset($_POST['woogst_form_submitted']) && $_POST['woogst_form_submitted'] == 'yes') {
+            $this->save_woogst_settings();
+        }
+
+        include plugin_dir_path(__FILE__) . 'templates/woogst-admin-settings.php';
+    }
+
+    public function save_woogst_settings()
+    {
+        // Sanitize and collect the form data
+        $settings = [
+            'gst_tax_class' => isset($_POST['gst_tax_class']) ? array_map('sanitize_text_field', $_POST['gst_tax_class']) : [],
+            'gst_checkout' => isset($_POST['gst_checkout']) ? 1 : 0,
+            'schedule_report' => isset($_POST['schedule_report']) ? 1 : 0,
+            'schedule_report_email' => isset($_POST['schedule_report_email']) ? 1 : 0,
+            'schedule_report_email_id' => isset($_POST['schedule_report_email_id']) ? sanitize_email($_POST['schedule_report_email_id']) : '',
+            'schedule_report_private' => isset($_POST['schedule_report_private']) ? 1 : 0
+        ];
+
+        // Save the settings to the 'owlth_gst_settings' option
+        update_option('owlth_gst_settings', $settings);
+    }
+
 }
-
-
-
-
 
 
 /**
@@ -194,12 +238,14 @@ class Woogst_Admin
  * 
  */
 
-function set_wp_admin_notice($message, $type){
+function set_wp_admin_notice($message, $type)
+{
     set_transient('woogst_admin_notice', ['message' => $message, 'type' => $type], 30);
 }
 
 // Checks transient 'woogst_admin_notice' and adds admin notice and deletes transient
-function woo_gst_admin_notice_message(){
+function woo_gst_admin_notice_message()
+{
     // Retrieve the transient
     $notice = get_transient('woogst_admin_notice');
 
@@ -216,10 +262,119 @@ function woo_gst_admin_notice_message(){
 }
 
 // Checks WooCommerce in installed & active plugins and sets admin notice
-function set_wp_admin_notice_active_woo(){
+function set_wp_admin_notice_active_woo()
+{
     if (!Woogst_Validator::is_woocommerce_installed() && !Woogst_Validator::is_woocommerce_active()) {
         set_wp_admin_notice("Please install & activate woocommerce plugin", 'error');
     }
 }
 
 
+/**
+ * Woo Tax Create
+ */
+function woogst_create_gst_tax_class_action()
+{
+    
+    if (isset($_GET['action']) && $_GET['action'] === 'woogst_create_gst_tax_class') {
+        $tax_classes = WC_Tax::get_tax_classes();
+        $gst_tax_rate = array(
+            1 => array(
+                'tax_rate_country' => 'IN',
+                'tax_rate_state' => '',
+                'tax_rate' => '5.0000',
+                'tax_rate_name' => 'IGST',
+                'tax_rate_priority' => 1,
+                'tax_rate_compound' => 0,
+                'tax_rate_shipping' => 0,
+                'tax_rate_order' => 0,
+                'tax_rate_class' => 'gst',
+            ),
+            2 => array(
+                'tax_rate_country' => 'IN',
+                'tax_rate_state' => '',
+                'tax_rate' => '2.5000',
+                'tax_rate_name' => 'CGST',
+                'tax_rate_priority' => 1,
+                'tax_rate_compound' => 0,
+                'tax_rate_shipping' => 0,
+                'tax_rate_order' => 1,
+                'tax_rate_class' => 'gst',
+            ),
+            3 => array(
+                'tax_rate_country' => 'IN',
+                'tax_rate_state' => '',
+                'tax_rate' => '2.5000',
+                'tax_rate_name' => 'SGST',
+                'tax_rate_priority' => 1,
+                'tax_rate_compound' => 0,
+                'tax_rate_shipping' => 0,
+                'tax_rate_order' => 2,
+                'tax_rate_class' => 'gst',
+            )
+        );
+        
+        if (!in_array('GST', $tax_classes)) {
+            $create_tax_class = WC_Tax::create_tax_class('GST', 'gst');
+            if (array_count_values($create_tax_class) > 0 ) {
+                foreach ($gst_tax_rate as $rate) {
+                    WC_Tax::_insert_tax_rate($rate);
+                }
+            }
+        }
+    }
+    set_wp_admin_notice('Created Tax class & tax rates for GST to use.', 'success');
+    wp_redirect(get_admin_url(null, '/admin.php?page=gst-settings'));
+}
+
+
+function woogst_create_gst_tax_rates()
+{
+    if (isset($_GET['action']) && $_GET['action'] === 'woogst_create_gst_tax_rates') {
+    $tax_classes = WC_Tax::get_tax_classes();
+    $gst_tax_rate = array(
+        1 => array(
+            'tax_rate_country' => 'IN',
+            'tax_rate_state' => '',
+            'tax_rate' => '5.0000',
+            'tax_rate_name' => 'IGST',
+            'tax_rate_priority' => 1,
+            'tax_rate_compound' => 0,
+            'tax_rate_shipping' => 0,
+            'tax_rate_order' => 0,
+            'tax_rate_class' => 'gst',
+        ),
+        2 => array(
+            'tax_rate_country' => 'IN',
+            'tax_rate_state' => '',
+            'tax_rate' => '2.5000',
+            'tax_rate_name' => 'CGST',
+            'tax_rate_priority' => 1,
+            'tax_rate_compound' => 0,
+            'tax_rate_shipping' => 0,
+            'tax_rate_order' => 1,
+            'tax_rate_class' => 'gst',
+        ),
+        3 => array(
+            'tax_rate_country' => 'IN',
+            'tax_rate_state' => '',
+            'tax_rate' => '2.5000',
+            'tax_rate_name' => 'SGST',
+            'tax_rate_priority' => 1,
+            'tax_rate_compound' => 0,
+            'tax_rate_shipping' => 0,
+            'tax_rate_order' => 2,
+            'tax_rate_class' => 'gst',
+        )
+    );
+
+    if (in_array('GST', $tax_classes)) {
+        error_log("GST Found");
+        foreach ($gst_tax_rate as $rate) {
+            WC_Tax::_insert_tax_rate($rate);
+        }
+    }
+    set_wp_admin_notice('Inserted IGST, CGST, SGST tax_rates in GST. Now the tax_rates', 'success');
+    wp_redirect(get_admin_url(null, '/admin.php?page=gst-settings'));
+}
+}

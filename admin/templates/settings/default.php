@@ -4,10 +4,8 @@
 function setting_tab_content()
 {
     // Retrieve saved settings from the single option key
-    $settings = get_option('owlth_gst_settings', []);
+    $settings = get_gst_options();
 
-    $tax_classes = WC_Tax::get_tax_classes();
-    $rates_for_tax_class = WC_Tax::get_rates_for_tax_class('GST');
     $saved_gst_tax_classes = isset($settings['gst_tax_class']) ? $settings['gst_tax_class'] : [];
     $saved_gst_tax_rates = isset($settings['gst_tax_rates']) ? $settings['gst_tax_rates'] : [];
     $gst_billing_state_validate = isset($settings['gst_billing_state_validate']) ? $settings['gst_billing_state_validate'] : 0;
@@ -17,7 +15,9 @@ function setting_tab_content()
     $schedule_report_email_id = isset($settings['schedule_report_email_id']) ? $settings['schedule_report_email_id'] : '';
     $schedule_report_private = isset($settings['schedule_report_private']) ? $settings['schedule_report_private'] : 0;
 
-      error_log(print_r(WC_Tax::get_rates_for_tax_class('GST'), true));
+    $tax_classes = WC_Tax::get_tax_classes();
+    $rates_for_tax_class = WC_Tax::get_rates_for_tax_class('GST');
+    error_log(print_r($_POST, true));
 
     ?>
     <h2>Tax Settings</h2>
@@ -32,9 +32,10 @@ function setting_tab_content()
                     <td>
                         <fieldset data-id="gst_tax_class">
                             <legend class="screen-reader-text"><span>WooCommerce tax classes</span></legend>
-
-                            <?php if ($tax_classes):
-                                foreach ($tax_classes as $tax_class): ?>
+                           
+                            <!-- if has tax classes then looping through tax class and adding checkboxes for them (setting active checkbox matching with setting wp_options->owlth_gst_settings) -->
+                            <?php if (WC_Tax::get_tax_classes()):
+                                foreach (WC_Tax::get_tax_classes() as $tax_class): ?>
                                     <label>
                                         <input type="checkbox" name="gst_tax_class[]" value="<?php echo esc_attr($tax_class); ?>"
                                             <?php echo in_array($tax_class, $saved_gst_tax_classes) ? 'checked' : ''; ?>>
@@ -42,42 +43,38 @@ function setting_tab_content()
                                     </label>
                                     <p class="description">Select tax classes to consider in GST reports.</p>
                                     <hr>
+                                    <?php if (WC_Tax::get_rates_for_tax_class($tax_class)):
+                                        foreach (WC_Tax::get_rates_for_tax_class($tax_class) as $rate) {
+                                            if ($rate->tax_rate_class === $tax_class): ?>
+                                                <label>
+                                                    <input type="checkbox" name="gst_tax_rates[]"
+                                                        value="<?php echo esc_attr($rate->tax_rate_id); ?>" <?php echo in_array($rate->tax_rate_id, $saved_gst_tax_rates) ? 'checked' : ''; ?>>
+                                                    <?php echo esc_html($rate->tax_rate_name) . ' (' . esc_html($rate->tax_rate) . '%)' ?>
+                                                </label><br>
+                                            <?php endif;
+                                        } 
+                                    ?>
+                                    <p class="description">These classes are generated for GST rates. <a target="blank" href="'. get_admin_url(null,'/admin.php?page=wc-settings&tab=tax&section=gst') .'">Change tax rates</a></p>
+                                    <hr>
+                                    <?php endif; ?>
                                 <?php endforeach; ?>
                             <?php endif; ?>
 
-                            <?php if ($rates_for_tax_class):
-                                foreach ($rates_for_tax_class as $rate) {
-                                    if ($rate->tax_rate_class === 'gst'): ?>
-                                        <label>
-                                            <input type="checkbox" name="gst_tax_rates[]"
-                                                value="<?php echo esc_attr($rate->tax_rate_id); ?>" <?php echo in_array($rate->tax_rate_id, $saved_gst_tax_rates) ? 'checked' : ''; ?>>
-                                            <?php echo esc_html($rate->tax_rate_name) . ' (' . esc_html($rate->tax_rate) . '%)' ?>
-                                        </label><br>
-                                    <?php endif;
-                                }
-                                echo '<p class="description">These classes are generated for GST rates. <a target="blank" href="'. get_admin_url(null,'/admin.php?page=wc-settings&tab=tax&section=gst') .'">Change tax rates</a></p>';
-                            endif; ?>
                             
-                            <?php if (!$tax_classes || !WC_Tax::get_rates_for_tax_class('GST')): ?>
-                                <form method="get" action="">
+                            
+                            <?php if (!WC_Tax::get_tax_classes() || !WC_Tax::get_rates_for_tax_class('NIL')): ?>
+                                <form method="get" action="woogst_create_gst_tax_class">
                                     <input type="hidden" name="action" value="woogst_create_gst_tax_class">
 
                                     <label for="gst-tax-rate">Enter GST Tax Rate Percentage:</label>
                                     <input type="number" id="gst-tax-rate" name="gst_tax_rate" value="18" min="0" max="28" step="1" required>
 
                                     <label for="gst_tax_class_name">
-                                    <input name="gst_tax_class_name" type="text" id="gst_tax_class_name" value="">
-                                    Enter GST Class name
-                                </label>
+                                        <input name="gst_tax_class_name" type="text" id="gst_tax_class_name" value="">Enter GST Class name
+                                    </label>
                                     <button type="submit" class="button-primary">Create new tax - GST</button>
                                 </form>
                                 <p class="description">Creates a new tax class: GST</p>
-                                <p class="description">Creates a new tax rates: IGST, CGST, SGST</p>
-                                </p>
-                            <?php elseif (!WC_Tax::get_rates_for_tax_class('GST')): ?>
-                                <p>
-                                    <a href="?action=woogst_create_gst_tax_rates" type="button" id="create-gst-tax-rates"
-                                        class="button-secondary">Insert tax rates to GST</a>
                                 <p class="description">Creates a new tax rates: IGST, CGST, SGST</p>
                                 </p>
                             <?php endif; ?>

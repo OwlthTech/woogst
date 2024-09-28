@@ -77,13 +77,14 @@ endif;
 if (!function_exists("handle_print_invoice")) :
 // Handle printing invoice
 function handle_print_invoice() {
-    if ( isset( $_GET['order_id'] ) && isset( $_GET['_wpnonce'] ) && wp_verify_nonce( $_GET['_wpnonce'], 'owlth-print-invoice' ) ) {
+    if ( isset( $_GET['order_id'] ) && isset( $_GET['_wpnonce'] ) && wp_verify_nonce( $_GET['_wpnonce'], 'owlth_print_invoice' ) ) {
+        // echo "Print it";
         $order_id = intval( $_GET['order_id'] );
         $order = wc_get_order( $order_id );
         
         if ( $order ) {
             include plugin_dir_path( dirname( __FILE__ ) ) . 'templates/invoice/invoice-template.php';
-            exit;
+            // exit;
         }
     }
     wp_die( 'Order not found' );

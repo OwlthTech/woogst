@@ -25,7 +25,7 @@ jQuery(document).ready(function ($) {
     });
 
 
-    var gstPattern = /^[0-9]{2}[A-Z]{3}[ABCFGHLJPTF]{1}[A-Z]{1}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    var gstPattern = /^[0-9]{2}[A-Z]{3}[ABCFGHLJPTF]{1}[A-Z]{1}[0-9]{4}[A-Z]{1}[1-9]{1}Z[0-9A-Z]{1}$/;
 
     // Ensure the input is always in uppercase
     $('#billing_gst_number').on('input', function () {

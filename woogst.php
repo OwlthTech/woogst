@@ -37,7 +37,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Rename this for your plugin and update it as you release new versions.
  */
 define( 'WOOGST_VERSION', '1.0.0' );
-
+define('WOOGST_BASE_NAME', plugin_basename( __FILE__ ));
 /**
  * The code that runs during plugin activation.
  * This action is documented in includes/class-woogst-activator.php

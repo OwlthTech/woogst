@@ -74,7 +74,7 @@ $store_country = WC()->countries->get_base_country();
             <div class="wrap">
                   <?php switch ($tab):
                         case 'permissions':
-                              echo '<pre>' . print_r($rate) . '</pre>';
+                              echo 'Permissions';
                               break;
                         case 'status':
                               echo 'Status of the report and options';

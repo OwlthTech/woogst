@@ -30,6 +30,8 @@ class Woogst_Admin
         $this->plugin_name = $plugin_name;
         $this->version = $version;
 
+        add_filter('plugin_action_links_'.WOOGST_BASE_NAME, array($this, 'add_settings_link'));
+
         // Registers 'gst-reports' post type
         add_action('init', [$this, 'register_gst_report_post_type']);
 
@@ -48,6 +50,11 @@ class Woogst_Admin
         $woo_gst->init();
 
     }
+	public function add_settings_link($links) {
+		$settings_link = '<a href="'.admin_url('admin.php?page=gst-settings').'">'. __('Settings') .'</a>';
+		array_unshift($links, $settings_link);
+		return $links;
+	}
 
     /**
      * Register the stylesheets for the admin area.
@@ -219,6 +226,8 @@ class Woogst_Admin
         // Sanitize and collect the form data
         $settings = [
             'gst_tax_class' => isset($_POST['gst_tax_class']) ? array_map('sanitize_text_field', $_POST['gst_tax_class']) : [],
+            'gst_tax_rates' => isset($_POST['gst_tax_rates']) ? array_map('sanitize_text_field', $_POST['gst_tax_rates']) : [],
+            'gst_billing_state_validate' => isset($_POST['gst_billing_state_validate']) ? 1 : 0,
             'gst_checkout' => isset($_POST['gst_checkout']) ? 1 : 0,
             'schedule_report' => isset($_POST['schedule_report']) ? 1 : 0,
             'schedule_report_email' => isset($_POST['schedule_report_email']) ? 1 : 0,
@@ -227,7 +236,14 @@ class Woogst_Admin
         ];
 
         // Save the settings to the 'owlth_gst_settings' option
-        update_option('owlth_gst_settings', $settings);
+        $update_settings = update_option('owlth_gst_settings', $settings);
+
+        if($update_settings) {
+            set_wp_admin_notice('Settings are saved successfully', 'success');
+        } else {
+            set_wp_admin_notice('Something went wrong when saving data', 'error');
+        }
+        wp_redirect($_SERVER['REQUEST_URI']);
     }
 
 }
@@ -273,59 +289,88 @@ function set_wp_admin_notice_active_woo()
 /**
  * Woo Tax Create
  */
-function woogst_create_gst_tax_class_action()
-{
-    
-    if (isset($_GET['action']) && $_GET['action'] === 'woogst_create_gst_tax_class') {
+function woogst_create_gst_tax_class_action() {
+    if (isset($_POST['action']) && $_POST['action'] === 'woogst_create_gst_tax_class') {
+        $gst_class = $_POST['gst_tax_class_name'];
+        $gst_slug = sanitize_title($_POST['gst_tax_class_name']);
+
+        $input_tax_rate = floatval($_POST['gst_tax_rate']);
         $tax_classes = WC_Tax::get_tax_classes();
         $gst_tax_rate = array(
             1 => array(
                 'tax_rate_country' => 'IN',
                 'tax_rate_state' => '',
-                'tax_rate' => '5.0000',
+                'tax_rate' => $input_tax_rate,
                 'tax_rate_name' => 'IGST',
-                'tax_rate_priority' => 1,
+                'tax_rate_priority' => 2,
                 'tax_rate_compound' => 0,
                 'tax_rate_shipping' => 0,
                 'tax_rate_order' => 0,
-                'tax_rate_class' => 'gst',
+                'tax_rate_class' => $gst_slug,
             ),
             2 => array(
                 'tax_rate_country' => 'IN',
-                'tax_rate_state' => '',
-                'tax_rate' => '2.5000',
-                'tax_rate_name' => 'CGST',
-                'tax_rate_priority' => 1,
-                'tax_rate_compound' => 0,
-                'tax_rate_shipping' => 0,
-                'tax_rate_order' => 1,
-                'tax_rate_class' => 'gst',
-            ),
-            3 => array(
-                'tax_rate_country' => 'IN',
-                'tax_rate_state' => '',
-                'tax_rate' => '2.5000',
+                'tax_rate_state' => WC()->countries->get_base_state() ?: '',
+                'tax_rate' => $input_tax_rate / 2,
                 'tax_rate_name' => 'SGST',
                 'tax_rate_priority' => 1,
                 'tax_rate_compound' => 0,
                 'tax_rate_shipping' => 0,
                 'tax_rate_order' => 2,
-                'tax_rate_class' => 'gst',
+                'tax_rate_class' => $gst_slug,
+            ),
+            3 => array(
+                'tax_rate_country' => 'IN',
+                'tax_rate_state' => WC()->countries->get_base_state() ?: '',
+                'tax_rate' => $input_tax_rate / 2,
+                'tax_rate_name' => 'CGST',
+                'tax_rate_priority' => 2,
+                'tax_rate_compound' => 0,
+                'tax_rate_shipping' => 0,
+                'tax_rate_order' => 1,
+                'tax_rate_class' => $gst_slug,
             )
         );
         
-        if (!in_array('GST', $tax_classes)) {
-            $create_tax_class = WC_Tax::create_tax_class('GST', 'gst');
-            if (array_count_values($create_tax_class) > 0 ) {
-                foreach ($gst_tax_rate as $rate) {
-                    WC_Tax::_insert_tax_rate($rate);
-                }
+        if (!in_array($gst_class, $tax_classes)) {
+            WC_Tax::create_tax_class($gst_class, $gst_slug);
+        }
+
+        foreach ($gst_tax_rate as $rate) {
+            WC_Tax::_insert_tax_rate($rate);
+        }
+
+        // Fetch the new tax rates for 'gst'
+        $gst_rates = WC_Tax::get_rates_for_tax_class($gst_slug);
+        $settings_tax_rates = [];
+
+        if (!empty($gst_rates)) {
+            foreach ($gst_rates as $rate) {
+                $settings_tax_rates[] = $rate->tax_rate_id;
             }
         }
+
+        // Get the existing settings for 'owlth_gst_settings'
+        $gst_settings = get_option('owlth_gst_settings', []);
+
+        // Ensure it's an array and update the gst_tax_rates within the settings
+        if (!is_array($gst_settings)) {
+            $gst_settings = [];
+        }
+
+        $gst_settings['gst_tax_class'] = [$gst_class];
+        $gst_settings['gst_tax_rates'] = $settings_tax_rates;
+
+        // Update the option with the new gst_tax_rates
+        update_option('owlth_gst_settings', $gst_settings);
+
+        // Notify and redirect
         set_wp_admin_notice('Created Tax class & tax rates for GST to use.', 'success');
         wp_redirect(get_admin_url(null, '/admin.php?page=gst-settings'));
+        exit;
     }
 }
+
 
 
 function woogst_create_gst_tax_rates()

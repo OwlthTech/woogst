@@ -1,0 +1,86 @@
+.permission-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Arial', sans-serif;
+    margin-bottom: 20px;
+}
+
+.permission-table thead {
+    background-color: #d5d5d5;
+    border-bottom: 2px solid #ddd;
+}
+
+.permission-table thead th {
+    text-align: left;
+    padding: 12px 15px;
+    font-weight: bold;
+    font-size: 16px;
+    color: #333;
+}
+
+.permission-table tbody tr {
+    border-bottom: 1px solid #ddd;
+}
+
+.permission-table tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+.permission-table td {
+    padding: 12px 15px;
+    font-size: 14px;
+    color: #555;
+}
+
+.permission-table td input[type="checkbox"] {
+    /* transform: scale(1.2); */
+    margin-right: 10px;
+}
+
+.permission-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.permission-table tbody tr:nth-child(odd) {
+    background-color: #fff;
+}
+
+.permission-table tbody tr td:first-child {
+    font-weight: bold;
+}
+
+.permission-table td {
+    vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+    .permission-table, .permission-table thead, .permission-table tbody, .permission-table th, .permission-table td, .permission-table tr {
+        display: block;
+    }
+
+    .permission-table thead {
+        display: none;
+    }
+
+    .permission-table tbody tr {
+        margin-bottom: 15px;
+        border-bottom: none;
+    }
+
+    .permission-table tbody tr td {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+        position: relative;
+    }
+
+    .permission-table tbody tr td:after {
+        
+        content: attr(data-label);
+        font-weight: 600;
+        color: #333;
+    }
+
+    .permission-table tbody tr td:last-child {
+        border-bottom: none;
+    }
+}

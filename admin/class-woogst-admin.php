@@ -24,7 +24,7 @@ require_once plugin_dir_path(dirname(__FILE__)) . 'admin/inc/gst/class-gst.php';
  */
 
 class Woogst_Admin
-{    
+{
     // Declare properties for plugin name and version
     protected $plugin_name;
     protected $version;
@@ -55,6 +55,9 @@ class Woogst_Admin
 
         add_action('wp_ajax_woogst_delete_gst_tax_rates', 'woogst_delete_gst_tax_rates');
         add_action('wp_ajax_nopriv_woogst_delete_gst_tax_rates', 'woogst_delete_gst_tax_rates');
+
+        add_action( 'wp_ajax_woogst_save_permissions', array( $this, 'save_permissions' ) );
+        add_action( 'wp_ajax_nopriv_woogst_save_permissions', array( $this, 'save_permissions' ) );
 
         $woo_gst = woogst_gst();
         $woo_gst->init();
@@ -92,14 +95,16 @@ class Woogst_Admin
             return;
         }
         $screen_id = get_current_screen()->id ?: '';
-        
+        var_dump($screen_id);
         if ($screen_id === wc_get_page_screen_id('shop-order')) {
-            wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/woogst-admin.css', array(), $this->version, 'all');
+            wp_enqueue_style($this->plugin_name . 'shop-order', plugin_dir_url(__FILE__) . 'css/woogst-admin.css', array(), $this->version, 'all');
         }
-        if($screen_id === 'woocommerce_page_gst-settings') {
-            wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/woogst-tabs.css', array(), $this->version, 'all');
+        if ($screen_id === 'woocommerce_page_gst-settings') {
+            wp_enqueue_style($this->plugin_name . '-tabs', plugin_dir_url(__FILE__) . 'css/woogst-tabs.css', array(), $this->version, 'all');
         }
-
+        if ($screen_id === 'woocommerce_page_gst-settings' && isset($_GET['tab']) && $_GET['tab'] === 'permissions') {
+            wp_enqueue_style($this->plugin_name . 'permissions', plugin_dir_url(__FILE__) . 'css/woogst-permissions.css', array(), $this->version, 'all');
+        }
     }
 
     /**
@@ -131,7 +136,7 @@ class Woogst_Admin
         if (class_exists('WooCommerce') && $screen_id === wc_get_page_screen_id('shop-order')) {
             wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/woogst-admin.js', array('jquery'), $this->version, false);
         }
-        if($screen_id === 'woocommerce_page_gst-settings') {
+        if ($screen_id === 'woocommerce_page_gst-settings') {
             wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/woogst-slabs.js', array('jquery'), $this->version, false);
         }
 
@@ -142,82 +147,88 @@ class Woogst_Admin
      * 
      */
     public function register_gst_report_post_type()
-    {
+{
+    $labels = array(
+        'name' => _x('GST Reports', 'Post Type General Name', 'woogst'),
+        'singular_name' => _x('GST Report', 'Post Type Singular Name', 'woogst'),
+        'menu_name' => __('WooGST', 'woogst'),
+        'name_admin_bar' => __('Post Type', 'woogst'),
+        'archives' => __('Item Archives', 'woogst'),
+        'attributes' => __('Item Attributes', 'woogst'),
+        'parent_item_colon' => __('Parent Item:', 'woogst'),
+        'all_items' => __('GST Reports', 'woogst'),
+        'add_new_item' => __('Add New Item', 'woogst'),
+        'add_new' => __('Generate Report', 'woogst'),
+        'new_item' => __('New Item', 'woogst'),
+        'edit_item' => __('Edit Item', 'woogst'),
+        'update_item' => __('Update Item', 'woogst'),
+        'view_item' => __('View Item', 'woogst'),
+        'view_items' => __('View Items', 'woogst'),
+        'search_items' => __('Search Item', 'woogst'),
+        'not_found' => __('Not found', 'woogst'),
+        'not_found_in_trash' => __('Not found in Trash', 'woogst'),
+        'featured_image' => __('Featured Image', 'woogst'),
+        'set_featured_image' => __('Set featured image', 'woogst'),
+        'remove_featured_image' => __('Remove featured image', 'woogst'),
+        'use_featured_image' => __('Use as featured image', 'woogst'),
+        'insert_into_item' => __('Insert into item', 'woogst'),
+        'uploaded_to_this_item' => __('Uploaded to this item', 'woogst'),
+        'items_list' => __('Items list', 'woogst'),
+        'items_list_navigation' => __('Items list navigation', 'woogst'),
+        'filter_items_list' => __('Filter items list', 'woogst'),
+    );
 
-        $labels = array(
-            'name' => _x('GST Reports', 'Post Type General Name', 'woogst'),
-            'singular_name' => _x('GST Report', 'Post Type Singular Name', 'woogst'),
-            'menu_name' => __('WooGST', 'woogst'),
-            'name_admin_bar' => __('Post Type', 'woogst'),
-            'archives' => __('Item Archives', 'woogst'),
-            'attributes' => __('Item Attributes', 'woogst'),
-            'parent_item_colon' => __('Parent Item:', 'woogst'),
-            'all_items' => __('GST Reports', 'woogst'),
-            'add_new_item' => __('Add New Item', 'woogst'),
-            'add_new' => __('Generate Report', 'woogst'),
-            'new_item' => __('New Item', 'woogst'),
-            'edit_item' => __('Edit Item', 'woogst'),
-            'update_item' => __('Update Item', 'woogst'),
-            'view_item' => __('View Item', 'woogst'),
-            'view_items' => __('View Items', 'woogst'),
-            'search_items' => __('Search Item', 'woogst'),
-            'not_found' => __('Not found', 'woogst'),
-            'not_found_in_trash' => __('Not found in Trash', 'woogst'),
-            'featured_image' => __('Featured Image', 'woogst'),
-            'set_featured_image' => __('Set featured image', 'woogst'),
-            'remove_featured_image' => __('Remove featured image', 'woogst'),
-            'use_featured_image' => __('Use as featured image', 'woogst'),
-            'insert_into_item' => __('Insert into item', 'woogst'),
-            'uploaded_to_this_item' => __('Uploaded to this item', 'woogst'),
-            'items_list' => __('Items list', 'woogst'),
-            'items_list_navigation' => __('Items list navigation', 'woogst'),
-            'filter_items_list' => __('Filter items list', 'woogst'),
-        );
-        $capabilities = array(
-            'edit_post' => 'manage_options',
-            'read_post' => 'manage_options',
-            'delete_post' => 'manage_options',
-            'edit_posts' => 'manage_options',
-            'edit_others_posts' => 'manage_options',
-            'publish_posts' => 'manage_options',
-            'read_private_posts' => 'manage_options',
-        );
-        $args = array(
-            'label' => __('GST Report', 'woogst'),
-            'description' => __('Registering post type for gst monthly reports', 'woogst'),
-            'labels' => $labels,
-            'supports' => array('title', 'comments', 'trackbacks', 'revisions', 'page-attributes'),
-            'taxonomies' => array('sale_type'),
-            'hierarchical' => false,
-            'public' => false,  // Ensure it's public to enable editing
-            'show_ui' => true,
-            'show_in_menu' => true,
-            'menu_position' => 5,
-            'menu_icon' => 'dashicons-money',
-            'capability_type' => 'post',
-            'capabilities' => $capabilities,
-            'show_in_admin_bar' => true,
-            'show_in_nav_menus' => true,
-            'can_export' => true,
-            'has_archive' => true,
-            'exclude_from_search' => true,
-            'publicly_queryable' => false,  // You can keep this false if it's an admin-only feature
-            'show_in_rest' => true,
-            'rest_base' => 'gst_reports',
-            'rest_controller_class' => 'WOO_GST_Order_Reports',
-        );
-        register_post_type('gst-reports', $args);
+    // Custom capabilities
+    $capabilities = array(
+        'edit_post'             => 'edit_gst_report',         // Edit a single GST report
+        'read_post'             => 'view_gst_report',         // View a single GST report
+        'delete_post'           => 'delete_gst_report',       // Delete a single GST report
+        'edit_posts'            => 'edit_gst_reports',        // Edit multiple GST reports
+        'edit_others_posts'     => 'edit_others_gst_reports', // Edit other users' GST reports
+        'publish_posts'         => 'publish_gst_reports',     // Publish GST reports
+        'read_private_posts'    => 'read_private_gst_reports',// View private GST reports
+        'delete_posts'          => 'delete_gst_reports',      // Bulk delete GST reports
+    );
 
-    }
+    // Arguments for the custom post type
+    $args = array(
+        'label' => __('GST Report', 'woogst'),
+        'description' => __('Registering post type for GST monthly reports', 'woogst'),
+        'labels' => $labels,
+        'supports' => array('title', 'comments', 'trackbacks', 'revisions', 'page-attributes'),
+        'taxonomies' => array('sale_type'),
+        'hierarchical' => false,
+        'public' => false,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'menu_position' => 5,
+        'menu_icon' => 'dashicons-money',
+        'capability_type' => array('gst_report', 'gst_reports'),  // Custom capability types
+        'capabilities' => $capabilities,
+        'map_meta_cap' => true,  // Map capabilities to users properly
+        'show_in_admin_bar' => true,
+        'show_in_nav_menus' => false,
+        'can_export' => true,
+        'has_archive' => true,
+        'exclude_from_search' => true,
+        'publicly_queryable' => false,
+        'show_in_rest' => true,
+        'rest_base' => 'gst_reports',
+        'rest_controller_class' => 'WOO_GST_Order_Reports',
+    );
+
+    register_post_type('gst-reports', $args);
+}
+
 
 
     public function woogst_menu()
     {
         add_submenu_page(
             'woocommerce',
-            'WooGST',
             'GST Settings',
-            'manage_options',
+            'GST Settings',
+            'manage_woogst_settings',
             'gst-settings',
             [$this, 'woogst_menu_page_callback']
         );
@@ -225,7 +236,8 @@ class Woogst_Admin
 
     public function woogst_menu_page_callback()
     {
-        if (!current_user_can('manage_options')) {
+        if (!current_user_can('manage_woogst_settings')) {
+            set_wp_admin_notice('You are not authorized to access this page.', 'error');
             return;
         }
 
@@ -242,6 +254,10 @@ class Woogst_Admin
 
     public function woogst_save_settings($tab)
     {
+        if (!current_user_can('manage_woogst_settings')) {
+            set_wp_admin_notice('You are not authorized to change settings.', 'error');
+            return;
+        }
         if (isset($tab)) {
             switch ($tab) {
                 case 'settings':
@@ -260,6 +276,7 @@ class Woogst_Admin
                         'schedule_report_email_id' => isset($_POST['schedule_report_email_id']) ? sanitize_email($_POST['schedule_report_email_id']) : '',
                         'schedule_report_private' => isset($_POST['schedule_report_private']) ? 1 : 0
                     ];
+                    $update_settings = update_option(WOOGST_OPTION_PREFIX . $tab, $settings);
                     break;
 
                 case 'gst-slabs':
@@ -267,20 +284,82 @@ class Woogst_Admin
                     $settings = [
                         'gst_tax_class' => isset($_POST['gst_tax_class']) ? array_map('sanitize_text_field', $_POST['gst_tax_class']) : [],
                     ];
+                    $update_settings = update_option(WOOGST_OPTION_PREFIX . $tab, $settings);
                     break;
+
+                case 'permissions':
+                    $this->woogst_save_permissions();
             }
         }
 
-        // Save the settings to the 'woogst_settings' option
-        $update_settings = update_option(WOOGST_OPTION_PREFIX . $tab, $settings);
-
-        if ($update_settings) {
+        if (isset($update_settings)) {
             set_wp_admin_notice('Settings are saved successfully', 'success');
-        } else {
-            set_wp_admin_notice('Something went wrong when saving form data', 'error');
         }
         wp_redirect($_SERVER['REQUEST_URI']);
     }
+
+    /**
+     * Handle AJAX request to save permissions.
+     */
+    public function woogst_save_permissions() {
+        // Check that the current user has permission to manage Woogst settings
+        if (!current_user_can('manage_woogst_settings')) {
+            set_wp_admin_notice('Unauthorized request.', 'error');
+            return;
+        }
+    
+        global $wp_roles;
+        $roles = $wp_roles->roles;
+    
+        foreach ($roles as $role_slug => $role_details) {
+            // Skip the administrator role to avoid modifying its permissions
+            if ($role_slug === 'administrator') {
+                continue;
+            }
+    
+            $role = get_role($role_slug);
+    
+            // Manage Woogst Settings
+            if (isset($_POST['manage_woogst_settings'][$role_slug]) && $_POST['manage_woogst_settings'][$role_slug] == '1') {
+                $role->add_cap('manage_woogst_settings');
+            } else {
+                $role->remove_cap('manage_woogst_settings');
+            }
+    
+            // View GST Reports
+            if (isset($_POST['view_gst_reports'][$role_slug]) && $_POST['view_gst_reports'][$role_slug] == '1') {
+                $role->add_cap('view_gst_reports');
+            } else {
+                $role->remove_cap('view_gst_reports');
+            }
+    
+            // Edit GST Reports
+            if (isset($_POST['edit_gst_reports'][$role_slug]) && $_POST['edit_gst_reports'][$role_slug] == '1') {
+                $role->add_cap('edit_gst_reports');
+            } else {
+                $role->remove_cap('edit_gst_reports');
+            }
+
+            // Create GST Reports
+            if (isset($_POST['publish_gst_reports'][$role_slug]) && $_POST['publish_gst_reports'][$role_slug] == '1') {
+                $role->add_cap('publish_gst_reports');
+            } else {
+                $role->remove_cap('publish_gst_reports');
+            }
+
+            // Delete GST Reports
+            if (isset($_POST['delete_gst_reports'][$role_slug]) && $_POST['delete_gst_reports'][$role_slug] == '1') {
+                $role->add_cap('delete_gst_reports');
+            } else {
+                $role->remove_cap('delete_gst_reports');
+            }
+        }
+    
+        set_wp_admin_notice("Permissions updated successfully", "success");
+        wp_redirect($_SERVER['REQUEST_URI']);
+        exit;
+    }
+    
 
 }
 
@@ -304,7 +383,8 @@ function woogst_get_options($tab)
  * Woo Tax Create
  */
 
-function woogst_create_gst_tax_class() {
+function woogst_create_gst_tax_class()
+{
     // Ensure the required POST data is available
     if (!isset($_POST['gst_tax_class']) || !isset($_POST['gst_tax_rate'])) {
         wp_send_json_error(['message' => 'Required data missing.']);
@@ -400,13 +480,14 @@ function woogst_create_gst_tax_rates($gst_class, $input_tax_rate)
 }
 
 
-function woogst_get_tax_rates() {
+function woogst_get_tax_rates()
+{
     if (!isset($_POST['gst_tax_class'])) {
         wp_send_json_error(['message' => 'Tax class not specified.']);
     }
 
     $gst_class = sanitize_text_field($_POST['gst_tax_class']);
-    
+
     // Fetch the tax rates for the given class
     $tax_rates = WC_Tax::get_rates_for_tax_class($gst_class);
 
@@ -424,7 +505,8 @@ function woogst_get_tax_rates() {
     }
 }
 
-function woogst_delete_gst_tax_rates() {
+function woogst_delete_gst_tax_rates()
+{
     if (!isset($_POST['gst_tax_class'])) {
         wp_send_json_error(['message' => 'Tax class not specified.']);
     }
@@ -455,7 +537,8 @@ function woogst_delete_gst_tax_rates() {
  * @param string $tax_class The tax class slug.
  * @return bool True if the tax class has existing rates, false otherwise.
  */
-function woogst_tax_class_has_rates($tax_class) {
+function woogst_tax_class_has_rates($tax_class)
+{
     // Get all rates for this tax class
     $rates = WC_Tax::get_rates_for_tax_class($tax_class);
 

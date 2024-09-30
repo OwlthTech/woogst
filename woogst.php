@@ -45,6 +45,7 @@ define('WOOGST_OPTION_PREFIX', 'woogst_');
  */
 function activate_woogst() {
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-woogst-activator.php';
+	Woogst_Activator::woogst_add_admin_capabilities();
 	Woogst_Activator::activate();
 }
 
@@ -54,6 +55,7 @@ function activate_woogst() {
  */
 function deactivate_woogst() {
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-woogst-deactivator.php';
+	Woogst_Deactivator::woogst_remove_admin_capabilities();
 	Woogst_Deactivator::deactivate();
 }
 

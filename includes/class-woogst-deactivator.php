@@ -20,7 +20,8 @@
  * @subpackage Woogst/includes
  * @author     Owlth Tech <owlthtech@gmail.com>
  */
-class Woogst_Deactivator {
+class Woogst_Deactivator
+{
 
 	/**
 	 * Short Description. (use period)
@@ -29,8 +30,33 @@ class Woogst_Deactivator {
 	 *
 	 * @since    1.0.0
 	 */
-	public static function deactivate() {
+	public static function deactivate()
+	{
 		wp_clear_scheduled_hook('woogst_send_monthly_tax_report');
 	}
+
+	public static function woogst_remove_admin_capabilities()
+	{
+		global $wp_roles;
+		$roles = $wp_roles->roles;
+
+		if (!empty($roles)) {
+			foreach ($roles as $role_slug => $role_details) {
+				// Get the role object
+				$role = get_role($role_slug);
+
+				// Ensure the role exists before attempting to remove capabilities
+				if ($role) {
+					// Remove custom capabilities for Woogst functionalities.
+					$role->remove_cap('manage_woogst_settings');
+					$role->remove_cap('view_gst_reports');
+					$role->remove_cap('edit_gst_reports');
+					$role->remove_cap('publish_gst_reports');
+					$role->remove_cap('delete_gst_reports');
+				}
+			}
+		}
+	}
+
 
 }

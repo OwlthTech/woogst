@@ -1,6 +1,7 @@
 <?php
 
-class Gst_Order_Table {
+class Gst_Order_Table
+{
       /**
        * Gets an instance of this object.
        * Prevents duplicate instances which avoid artefacts and improves performance.
@@ -29,10 +30,10 @@ class Gst_Order_Table {
             /**
              * Woocommerce > Orders
              */
-            
+
             // Add columns header
             add_filter('manage_edit-shop_order_columns', 'add_admin_order_list_custom_column', 20);
-            add_filter( 'manage_woocommerce_page_wc-orders_columns', 'add_admin_order_list_custom_column', 20);
+            add_filter('manage_woocommerce_page_wc-orders_columns', 'add_admin_order_list_custom_column', 20);
 
             // Add columns data
             add_action('manage_shop_order_posts_custom_column', 'display_wc_order_list_custom_column_content', 20, 2);
@@ -66,7 +67,7 @@ if (!function_exists('woogst_admin_gst_order_table')) {
  * @return array 
  */
 
- if (!function_exists('add_admin_order_list_custom_column')):
+if (!function_exists('add_admin_order_list_custom_column')):
       function add_admin_order_list_custom_column($columns)
       {
             $reordered_columns = array();
@@ -76,7 +77,7 @@ if (!function_exists('woogst_admin_gst_order_table')) {
                   $reordered_columns[$key] = $column;
                   if ($key == 'order_status') {
                         // Inserting after "Status" column
-                        $reordered_columns['gst_claim'] = __('GST Claim?', 'theme_domain');
+                        $reordered_columns['gst_claim'] = __('GST Claimed', 'theme_domain');
                         $reordered_columns['gst_details'] = __('GST Details', 'theme_domain');
                   }
             }

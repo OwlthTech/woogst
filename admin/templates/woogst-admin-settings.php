@@ -12,38 +12,16 @@
  * @subpackage Woogst/admin/partials
  */
 
-include plugin_dir_path(dirname(__FILE__)) . 'templates/settings/default.php';
+require_once plugin_dir_path(dirname(__FILE__)) . 'templates/settings/tax-settings.php';
+require_once plugin_dir_path(dirname(__FILE__)) . 'templates/settings/gst-slabs.php';
+require_once plugin_dir_path(dirname(__FILE__)) . 'templates/settings/gst-reports.php';
+require_once plugin_dir_path(dirname(__FILE__)) . 'templates/settings/permissions.php';
 ?>
 
 
 <?php
 $default_tab = null;
 $tab = isset($_GET['tab']) ? $_GET['tab'] : $default_tab;
-
-/**
- * Get methods for tax
- */
-$store_gst_details = [];
-// All class name - Returns array of all tax_class Names only
-
-// error_log(print_r($tax_classes, true));
-
-// Returns array of tax_class Name & Slug by slug params 'gst'. False if not found.
-$tax_classes_by_gst_slug = WC_Tax::get_tax_class_by('slug', 'gst');
-// error_log(print_r($tax_classes_by_gst_slug, true));
-
-// Returns array of an object for tax rates for parsed tax_class 'GST'
-$tax_rates_for_gst_class = WC_Tax::get_rates_for_tax_class('GST');
-// error_log(print_r($tax_rates_for_gst_class, true));
-// $store_gst_details['tax_classes'] = $tax_classes;
-// $store_gst_details['tax_classes_by_gst_slug'] = $tax_classes_by_gst_slug;
-// $store_gst_details['tax_rates_for_gst_class'] = $tax_rates_for_gst_class;
-// error_log(print_r($store_gst_details, true));
-// Array of an GST tax rates
-
-
-$store_state = WC()->countries->get_base_state();
-$store_country = WC()->countries->get_base_country();
 
 /**
  * Created 'GST' tax_class & tax_reates for that class
@@ -64,6 +42,10 @@ $store_country = WC()->countries->get_base_country();
       <nav class="nav-tab-wrapper">
             <a href="?page=gst-settings" class="nav-tab <?php if ($tab === null): ?>nav-tab-active<?php endif; ?>">Tax
                   settings</a>
+            <a href="?page=gst-settings&tab=gst-reports"
+                  class="nav-tab <?php if ($tab === 'gst-reports'): ?>nav-tab-active<?php endif; ?>">Reports</a>
+            <a href="?page=gst-settings&tab=gst-slabs"
+                  class="nav-tab <?php if ($tab === 'gst-slabs'): ?>nav-tab-active<?php endif; ?>">GST Slabs</a>
             <a href="?page=gst-settings&tab=permissions"
                   class="nav-tab <?php if ($tab === 'permissions'): ?>nav-tab-active<?php endif; ?>">Permissions</a>
             <a href="?page=gst-settings&tab=status"
@@ -73,14 +55,20 @@ $store_country = WC()->countries->get_base_country();
       <div class="tab-content">
             <div class="wrap">
                   <?php switch ($tab):
+                        case 'gst-slabs':
+                              gst_slabs_tab_content('gst-slabs');
+                              break;
                         case 'permissions':
-                              echo 'Permissions';
+                              permissions_tab_content('permissions');
                               break;
                         case 'status':
                               echo 'Status of the report and options';
                               break;
+                        case 'gst-reports':
+                              gst_report_tab_content('gst-reports');
+                              break;
                         default:
-                              setting_tab_content();
+                              tax_setting_tab_content('settings');
                               break;
                   endswitch; ?>
             </div>

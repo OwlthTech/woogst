@@ -38,6 +38,7 @@ if ( ! defined( 'WPINC' ) ) {
  */
 define( 'WOOGST_VERSION', '1.0.0' );
 define('WOOGST_BASE_NAME', plugin_basename( __FILE__ ));
+define('WOOGST_OPTION_PREFIX', 'woogst_');
 /**
  * The code that runs during plugin activation.
  * This action is documented in includes/class-woogst-activator.php

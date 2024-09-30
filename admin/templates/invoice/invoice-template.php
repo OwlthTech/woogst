@@ -2,7 +2,7 @@
 // Get order details
 // $order_id = $order->get_id();
 // $order_date = $order->get_date_created()->format('Y-m-d');
-
+error_log(print_r($order, true));
 $ordered_items = $order->get_items();
 
 // $order_total = $order->get_total();

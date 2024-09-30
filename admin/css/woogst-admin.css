@@ -10,3 +10,8 @@
     font-family: Dashicons;
     content: "\f193";
 }
+
+.gst_tax_class th, .gst_tax_class td {
+    border: 1px solid black!important;
+    border-style: ridge !important;
+}

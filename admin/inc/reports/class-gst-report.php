@@ -18,7 +18,7 @@ class GstReport
      * @since 1.0.0
      */
 
-    //  protected $
+    protected $reports_directory;
 
     public static function get_instance()
     {
@@ -43,9 +43,10 @@ class GstReport
 
         // Test action
         add_action('wp_loaded', array($this, 'generate_save_and_send_report'));
-        
+
     }
 
+    
     /**
      * Schedule the monthly report if not already scheduled.
      */
@@ -112,11 +113,12 @@ class GstReport
     /**
      * Generate, save and send the report via email.
      */
-    public function woogst_report_handler($generate = null, $send_email = null, $month = null, $year = null) {
-        if(is_null($generate)) {
+    public function woogst_report_handler($generate = null, $send_email = null, $month = null, $year = null)
+    {
+        if (is_null($generate)) {
             $generate = true;
         }
-        if(is_null($send_email)) {
+        if (is_null($send_email)) {
             $send_email = true;
         }
 
@@ -127,12 +129,12 @@ class GstReport
                 'order_total' => $order['order_total'], // Optionally store total amount
             );
         }, $order_data);
-        
-        if($generate) {
+
+        if ($generate) {
             $csv_file_path = $this->generate_csv($order_data, $month, $year);
         }
 
-        if($send_email) {
+        if ($send_email) {
             // Send the email with CSV attachment
             $to = 'owlthtech@gmail.com';
             $subject = 'Orgotel Organic - Previous Month Online Order Invoices';
@@ -217,27 +219,25 @@ class GstReport
         }
     }
 
-
-
     // Function to fetch WooCommerce orders for the previous month and include custom meta fields
     function get_monthly_orders($month = null, $year = null)
     {
         // Use previous month and current year as default if no values are passed
-    if (empty($month) || $month < 1 || $month > 12) {
-        $month = date('m', strtotime('first day of last month'));
-    }
+        if (empty($month) || $month < 1 || $month > 12) {
+            $month = date('m', strtotime('first day of last month'));
+        }
 
-    if (empty($year) || $year < 1970 || $year > date('Y')) {
-        $year = date('Y', strtotime('first day of last month'));
-    }
+        if (empty($year) || $year < 1970 || $year > date('Y')) {
+            $year = date('Y', strtotime('first day of last month'));
+        }
 
-    // Create valid DateTime objects for the first and last day of the month
-    try {
-        $first_day_of_month = new DateTime("$year-$month-01 00:00:00");
-        $last_day_of_month = new DateTime($first_day_of_month->format('Y-m-t 23:59:59'));
-    } catch (Exception $e) {
-        return new WP_Error('invalid_date', __('Invalid date provided', 'woogst'));
-    }
+        // Create valid DateTime objects for the first and last day of the month
+        try {
+            $first_day_of_month = new DateTime("$year-$month-01 00:00:00");
+            $last_day_of_month = new DateTime($first_day_of_month->format('Y-m-t 23:59:59'));
+        } catch (Exception $e) {
+            return new WP_Error('invalid_date', __('Invalid date provided', 'woogst'));
+        }
 
         // Query to get orders from the specified month
         $args = array(
@@ -250,7 +250,7 @@ class GstReport
             ),
             'posts_per_page' => -1, // Retrieve all orders
         );
-        
+
         $orders = get_posts($args);
 
         // Array to store the order details with custom meta fields
@@ -292,19 +292,6 @@ class GstReport
     // Function to generate the CSV file with custom meta fields
     function generate_csv($orders, $month = null, $year = null)
     {
-
-        // File path for the CSV
-        $upload_dir = wp_upload_dir();
-
-        // Check if the order_reports directory exists; if not, create it
-        $reports_dir = $upload_dir['basedir'] . '/order_reports/';
-        if (!file_exists($reports_dir)) {
-            if (!mkdir($reports_dir, 0755, true)) {
-                error_log('Failed to create directory: ' . $reports_dir);
-                return false; // Handle error if directory creation fails
-            }
-        }
-
         // If no month and year are passed, use the previous month and current year as default
         if (is_null($month)) {
             $month = date('m', strtotime('first day of last month'));
@@ -316,12 +303,11 @@ class GstReport
 
         // Set the file name based on the passed or default month and year
         $file_name = "woogst-tax-report-{$year}-{$month}.csv";
-        $csv_file_path = "{$reports_dir}{$file_name}";
-
+        $reports_directory = get_report_directory();
+        $csv_file_path = "{$reports_directory}{$file_name}";
         // Open file for writing
         $file = fopen($csv_file_path, 'w');
         if ($file === false) {
-            error_log('Failed to open file for writing: ' . $csv_file_path);
             return false; // Handle error if file opening fails
         }
 
@@ -343,7 +329,8 @@ class GstReport
         // Close the file
         fclose($file);
 
-        // Normalize the file path for URL use (convert backslashes to forward slashes)
+        // Create the public URL for the CSV file
+        $upload_dir = wp_upload_dir();
         $csv_file_url = $upload_dir['baseurl'] . '/order-reports/' . $file_name;
 
         log_report_status("CSV generated and saved. Path -> $csv_file_url");
@@ -352,6 +339,24 @@ class GstReport
 
 }
 
+if(!function_exists('get_report_directory')) {
+    function get_report_directory()
+    {
+        // File path for the CSV
+        $upload_dir = wp_upload_dir();
+        // Check if the order_reports directory exists; if not, create it
+        $reports_directory = $upload_dir['basedir'] . '/order-reports/';
+        // Ensure that the custom order_reports directory exists
+        if (!file_exists($reports_directory)) {
+            if (!mkdir($reports_directory, 0755, true)) {
+                error_log("Failed to create the reports directory: {$reports_directory}");
+            } else {
+                error_log("Reports directory created successfully: {$reports_directory}");
+            }
+        }
+        return $reports_directory;
+    }
+}
 
 if (!function_exists("generate_order_csv")) {
     function generate_order_csv($order_ids, $output_to_browser = true)

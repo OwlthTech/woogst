@@ -24,7 +24,10 @@ require_once plugin_dir_path(dirname(__FILE__)) . 'admin/inc/gst/class-gst.php';
  */
 
 class Woogst_Admin
-{
+{    
+    // Declare properties for plugin name and version
+    protected $plugin_name;
+    protected $version;
     public function __construct($plugin_name, $version)
     {
         $this->plugin_name = $plugin_name;
@@ -43,8 +46,15 @@ class Woogst_Admin
         // Checks woocommerce installed & activated and sets admin notice
         add_action('admin_notices', 'set_wp_admin_notice_active_woo');
 
-        add_action('init', 'woogst_create_gst_tax_class_action');
+        add_action('wp_ajax_woogst_create_gst_tax_class', 'woogst_create_gst_tax_class');
+        add_action('wp_ajax_nopriv_woogst_create_gst_tax_class', 'woogst_create_gst_tax_class');
         // add_action('init', 'woogst_create_gst_tax_rates', 10, 2);
+
+        add_action('wp_ajax_woogst_get_tax_rates', 'woogst_get_tax_rates');
+        add_action('wp_ajax_nopriv_woogst_get_tax_rates', 'woogst_get_tax_rates');
+
+        add_action('wp_ajax_woogst_delete_gst_tax_rates', 'woogst_delete_gst_tax_rates');
+        add_action('wp_ajax_nopriv_woogst_delete_gst_tax_rates', 'woogst_delete_gst_tax_rates');
 
         $woo_gst = woogst_gst();
         $woo_gst->init();
@@ -76,15 +86,18 @@ class Woogst_Admin
          * between the defined hooks and the functions defined in this
          * class.
          */
+
         $has_woocomemrce = class_exists('WooCommerce');
         if (!$has_woocomemrce) {
             return;
         }
-        $screen = get_current_screen();
-        $screen_id = $screen ? $screen->id : '';
-
+        $screen_id = get_current_screen()->id ?: '';
+        
         if ($screen_id === wc_get_page_screen_id('shop-order')) {
             wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/woogst-admin.css', array(), $this->version, 'all');
+        }
+        if($screen_id === 'woocommerce_page_gst-settings') {
+            wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/woogst-tabs.css', array(), $this->version, 'all');
         }
 
     }
@@ -114,10 +127,12 @@ class Woogst_Admin
         }
         $screen = get_current_screen();
         $screen_id = $screen ? $screen->id : '';
-
         // Check screen base and page
         if (class_exists('WooCommerce') && $screen_id === wc_get_page_screen_id('shop-order')) {
             wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/woogst-admin.js', array('jquery'), $this->version, false);
+        }
+        if($screen_id === 'woocommerce_page_gst-settings') {
+            wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/woogst-slabs.js', array('jquery'), $this->version, false);
         }
 
     }
@@ -216,28 +231,48 @@ class Woogst_Admin
 
         // Check if the form has been submitted
         if (isset($_POST['woogst_form_submitted']) && $_POST['woogst_form_submitted'] == 'yes') {
-            $this->save_woogst_settings();
+            if (isset($_POST['tab'])) {
+                $tab = $_POST['tab'];
+                $this->woogst_save_settings($tab);
+            }
         }
 
         include plugin_dir_path(__FILE__) . 'templates/woogst-admin-settings.php';
     }
 
-    public function save_woogst_settings()
+    public function woogst_save_settings($tab)
     {
-        // Sanitize and collect the form data
-        $settings = [
-            'gst_tax_class' => isset($_POST['gst_tax_class']) ? array_map('sanitize_text_field', $_POST['gst_tax_class']) : [],
-            'gst_tax_rates' => isset($_POST['gst_tax_rates']) ? array_map('sanitize_text_field', $_POST['gst_tax_rates']) : [],
-            'gst_billing_state_validate' => isset($_POST['gst_billing_state_validate']) ? 1 : 0,
-            'gst_checkout' => isset($_POST['gst_checkout']) ? 1 : 0,
-            'schedule_report' => isset($_POST['schedule_report']) ? 1 : 0,
-            'schedule_report_email' => isset($_POST['schedule_report_email']) ? 1 : 0,
-            'schedule_report_email_id' => isset($_POST['schedule_report_email_id']) ? sanitize_email($_POST['schedule_report_email_id']) : '',
-            'schedule_report_private' => isset($_POST['schedule_report_private']) ? 1 : 0
-        ];
+        if (isset($tab)) {
+            switch ($tab) {
+                case 'settings':
+                    // Sanitize and collect the form data
+                    $settings = [
+                        'gst_checkout' => isset($_POST['gst_checkout']) ? 1 : 0,
+                        'gst_billing_state_validate' => isset($_POST['gst_billing_state_validate']) ? 1 : 0
+                    ];
+                    break;
 
-        // Save the settings to the 'owlth_gst_settings' option
-        $update_settings = update_option('owlth_gst_settings', $settings);
+                case 'gst-reports':
+                    // Sanitize and collect the form data
+                    $settings = [
+                        'schedule_report' => isset($_POST['schedule_report']) ? 1 : 0,
+                        'schedule_report_email' => isset($_POST['schedule_report_email']) ? 1 : 0,
+                        'schedule_report_email_id' => isset($_POST['schedule_report_email_id']) ? sanitize_email($_POST['schedule_report_email_id']) : '',
+                        'schedule_report_private' => isset($_POST['schedule_report_private']) ? 1 : 0
+                    ];
+                    break;
+
+                case 'gst-slabs':
+                    // Sanitize and collect the form data
+                    $settings = [
+                        'gst_tax_class' => isset($_POST['gst_tax_class']) ? array_map('sanitize_text_field', $_POST['gst_tax_class']) : [],
+                    ];
+                    break;
+            }
+        }
+
+        // Save the settings to the 'woogst_settings' option
+        $update_settings = update_option(WOOGST_OPTION_PREFIX . $tab, $settings);
 
         if ($update_settings) {
             set_wp_admin_notice('Settings are saved successfully', 'success');
@@ -251,114 +286,179 @@ class Woogst_Admin
 
 
 
-function get_gst_options()
+function woogst_get_options($tab)
 {
-    // Get the existing settings for 'owlth_gst_settings'
-    $gst_settings = get_option('owlth_gst_settings', []);
+    // Get the existing settings for 'woogst_settings'
+    $gst_settings = get_option(WOOGST_OPTION_PREFIX . $tab, []);
 
     // Ensure it's an array and update the gst_tax_rates within the settings
     if (!is_array($gst_settings)) {
-        set_wp_admin_notice('option owlth_gst_settings is not an array', 'error');
+        set_wp_admin_notice('option ' . WOOGST_OPTION_PREFIX . $tab . ' is not an array', 'error');
         wp_redirect(get_admin_url(null, '/admin.php?page=gst-settings'));
         exit;
     }
     return $gst_settings;
 }
 
-
 /**
  * Woo Tax Create
  */
-function woogst_create_gst_tax_class_action()
-{
-    if (isset($_POST['action']) && $_POST['action'] === 'woogst_create_gst_tax_class') {
-        // Get form fields gst_tax_class_name
-        $gst_class = $_POST['gst_tax_class_name'];
-        $gst_slug = sanitize_title($_POST['gst_tax_class_name']);
-        // get existing gst option settings
-        $gst_settings = get_gst_options();
-        
-        
-        // create_tax_class in wp_wc_tax_rate_classes
-        $tax_classes = WC_Tax::get_tax_classes();
-        if (!in_array($gst_class, $tax_classes)) {
-            WC_Tax::create_tax_class($gst_class, $gst_slug);
-            // Update $gst_class in wp_options->owlth_gst_settings->gst_tax_class
-            update_option('owlth_gst_settings[gst_tax_class]', [$gst_class]);
-            woogst_create_gst_tax_rates();
-        } else {
-            // Notify and redirect
-            set_wp_admin_notice('Class name already exist', 'error');
-            wp_redirect(get_admin_url(null, '/admin.php?page=gst-settings'));
-            exit;
-        }
 
-        // Notify and redirect
-        set_wp_admin_notice('Created '. $gst_class . ' (' . $gst_slug . ') tax class', 'success');
-        wp_redirect(get_admin_url(null, '/admin.php?page=gst-settings'));
+function woogst_create_gst_tax_class() {
+    // Ensure the required POST data is available
+    if (!isset($_POST['gst_tax_class']) || !isset($_POST['gst_tax_rate'])) {
+        wp_send_json_error(['message' => 'Required data missing.']);
     }
+
+    // Sanitize the input
+    $gst_class = sanitize_text_field($_POST['gst_tax_class']);
+    $tax_rate = floatval($_POST['gst_tax_rate']);
+
+    // Get existing WooCommerce tax classes
+    $woo_tax_classes = WC_Tax::get_tax_classes();
+
+    // Load saved plugin options for the 'gst-slabs' tab
+    $settings = woogst_get_options('gst-slabs'); // Fetch the current gst-slabs settings
+
+    // Ensure the gst_tax_class array exists in settings
+    if (!isset($settings['gst_tax_class'])) {
+        $settings['gst_tax_class'] = []; // Initialize if it doesn't exist
+    }
+
+    // Add to the settings GST tax class array if not already present
+    if (!in_array($gst_class, $settings['gst_tax_class'])) {
+        $settings['gst_tax_class'][] = $gst_class;
+    }
+
+    // Create tax class in WooCommerce if it doesn't exist
+    if (!in_array($gst_class, $woo_tax_classes)) {
+        WC_Tax::create_tax_class($gst_class, sanitize_title($gst_class));
+    }
+
+    // Insert tax rates for the given class
+    woogst_create_gst_tax_rates($gst_class, $tax_rate);
+
+    // Save the updated GST tax classes in the 'gst-slabs' option
+    update_option(WOOGST_OPTION_PREFIX . 'gst-slabs', $settings);
+
+    wp_send_json_success(['message' => 'Tax rates successfully created for ' . $gst_class]);
 }
 
 
 
-function woogst_create_gst_tax_rates()
+function woogst_create_gst_tax_rates($gst_class, $input_tax_rate)
 {
-        // Get form fields gst_tax_class_name
-        $input_tax_rate = floatval($_POST['gst_tax_rate']);
-        $tax_class = $_POST['gst_tax_class_name'];
-        $tax_class_slug = sanitize_title($_POST['gst_tax_class_name']);
-        
-        // get existing gst option settings
-        $gst_settings = get_gst_options();
-        $gst_tax_rate = array(
-            1 => array(
-                'tax_rate_country' => 'IN',
-                'tax_rate_state' => '',
-                'tax_rate' => $input_tax_rate,
-                'tax_rate_name' => 'IGST',
-                'tax_rate_priority' => 2,
-                'tax_rate_compound' => 0,
-                'tax_rate_shipping' => 0,
-                'tax_rate_order' => 0,
-                'tax_rate_class' => $tax_class_slug,
-            ),
-            2 => array(
-                'tax_rate_country' => 'IN',
-                'tax_rate_state' => WC()->countries->get_base_state() ?: '',
-                'tax_rate' => $input_tax_rate / 2,
-                'tax_rate_name' => 'SGST',
-                'tax_rate_priority' => 1,
-                'tax_rate_compound' => 0,
-                'tax_rate_shipping' => 0,
-                'tax_rate_order' => 2,
-                'tax_rate_class' => $tax_class_slug,
-            ),
-            3 => array(
-                'tax_rate_country' => 'IN',
-                'tax_rate_state' => WC()->countries->get_base_state() ?: '',
-                'tax_rate' => $input_tax_rate / 2,
-                'tax_rate_name' => 'CGST',
-                'tax_rate_priority' => 2,
-                'tax_rate_compound' => 0,
-                'tax_rate_shipping' => 0,
-                'tax_rate_order' => 1,
-                'tax_rate_class' => $tax_class_slug,
-            )
-        );
 
-        if (!in_array($tax_class, WC_Tax::get_tax_classes())) {
-            set_wp_admin_notice($tax_class_slug .' tax class not found', 'error');
-            wp_redirect(get_admin_url(null, '/admin.php?page=gst-settings'));
-            exit;
-        }
+    $gst_tax_rate = array(
+        1 => array(
+            'tax_rate_country' => 'IN',
+            'tax_rate_state' => '',
+            'tax_rate' => $input_tax_rate,
+            'tax_rate_name' => 'IGST',
+            'tax_rate_priority' => 2,
+            'tax_rate_compound' => 0,
+            'tax_rate_shipping' => 0,
+            'tax_rate_order' => 0,
+            'tax_rate_class' => $gst_class,
+        ),
+        2 => array(
+            'tax_rate_country' => 'IN',
+            'tax_rate_state' => WC()->countries->get_base_state() ?: '',
+            'tax_rate' => $input_tax_rate / 2,
+            'tax_rate_name' => 'SGST',
+            'tax_rate_priority' => 1,
+            'tax_rate_compound' => 0,
+            'tax_rate_shipping' => 0,
+            'tax_rate_order' => 2,
+            'tax_rate_class' => $gst_class,
+        ),
+        3 => array(
+            'tax_rate_country' => 'IN',
+            'tax_rate_state' => WC()->countries->get_base_state() ?: '',
+            'tax_rate' => $input_tax_rate / 2,
+            'tax_rate_name' => 'CGST',
+            'tax_rate_priority' => 2,
+            'tax_rate_compound' => 0,
+            'tax_rate_shipping' => 0,
+            'tax_rate_order' => 1,
+            'tax_rate_class' => $gst_class,
+        )
+    );
 
-        foreach ($gst_tax_rate as $rate) {
-            WC_Tax::_insert_tax_rate($rate);
-            // Update $gst_class in wp_options->owlth_gst_settings->gst_tax_class
-            update_option($gst_settings['gst_tax_class']['gst_tax_rates'], $rate);
-        }
-
-        set_wp_admin_notice('Inserted IGST, CGST, SGST in tax class ' . $tax_class_slug , 'success');
+    if (!in_array($gst_class, WC_Tax::get_tax_classes())) {
+        set_wp_admin_notice($gst_class . ' tax class not found', 'error');
         wp_redirect(get_admin_url(null, '/admin.php?page=gst-settings'));
+        exit;
+    }
 
+    foreach ($gst_tax_rate as $rate) {
+        WC_Tax::_insert_tax_rate($rate);
+    }
+
+    wp_send_json_success(['message' => 'Tax rates successfully created for ' . $gst_class]);
+
+}
+
+
+function woogst_get_tax_rates() {
+    if (!isset($_POST['gst_tax_class'])) {
+        wp_send_json_error(['message' => 'Tax class not specified.']);
+    }
+
+    $gst_class = sanitize_text_field($_POST['gst_tax_class']);
+    
+    // Fetch the tax rates for the given class
+    $tax_rates = WC_Tax::get_rates_for_tax_class($gst_class);
+
+    if (!empty($tax_rates)) {
+        $rates = [];
+        foreach ($tax_rates as $rate) {
+            $rates[] = [
+                'tax_rate_name' => $rate->tax_rate_name,
+                'tax_rate' => $rate->tax_rate
+            ];
+        }
+        wp_send_json_success(['rates' => $rates]);
+    } else {
+        wp_send_json_error(['message' => 'No tax rates found for this class.']);
+    }
+}
+
+function woogst_delete_gst_tax_rates() {
+    if (!isset($_POST['gst_tax_class'])) {
+        wp_send_json_error(['message' => 'Tax class not specified.']);
+    }
+
+    $gst_class = sanitize_text_field($_POST['gst_tax_class']);
+
+    // Fetch the tax rates for the given class
+    $tax_rates = WC_Tax::get_rates_for_tax_class($gst_class);
+
+    if (!empty($tax_rates)) {
+        // Remove each tax rate for this class
+        foreach ($tax_rates as $rate_id => $rate) {
+            WC_Tax::_delete_tax_rate($rate_id);
+        }
+
+        // Also delete tax class
+        WC_Tax::delete_tax_class_by('name', $gst_class);
+        // Return a success message
+        wp_send_json_success(['message' => 'Tax rates removed for ' . $gst_class]);
+    } else {
+        wp_send_json_error(['message' => 'No tax rates found for this class.']);
+    }
+}
+
+/**
+ * Check if a tax class already has tax rates.
+ *
+ * @param string $tax_class The tax class slug.
+ * @return bool True if the tax class has existing rates, false otherwise.
+ */
+function woogst_tax_class_has_rates($tax_class) {
+    // Get all rates for this tax class
+    $rates = WC_Tax::get_rates_for_tax_class($tax_class);
+
+    // Return true if any rates exist, false otherwise
+    return !empty($rates);
 }

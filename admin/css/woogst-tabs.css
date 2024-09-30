@@ -1,0 +1,25 @@
+.gst_tax_class {
+    width: 100%;
+}
+
+.gst_tax_class th,
+.gst_tax_class td {
+    border: 1px solid #d5d5d5 !important;
+    border-style: ridge !important;
+}
+
+.gst_tax_class td:first-child {
+    width: 20%;
+    min-width: 100%;
+    position: relative;
+}
+
+.gst_tax_class .remove-tax-rate-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: red;
+}

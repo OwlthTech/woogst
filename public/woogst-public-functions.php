@@ -112,7 +112,6 @@ if (!function_exists('gst_fields_sanitize_and_validate')) {
 if (!function_exists('gst_fields_save_in_order_meta')) {
       function gst_fields_save_in_order_meta($order_id)
       {
-            // error_log(print_r($_POST, true));
             // _billing_claim_gst
             $claim_gst = isset($_POST['billing_claim_gst']) && $_POST['billing_claim_gst'] === '1';
             $gst_holder_name = isset($_POST['billing_gst_trade_name']) ? sanitize_text_field($_POST['billing_gst_trade_name']) : '';

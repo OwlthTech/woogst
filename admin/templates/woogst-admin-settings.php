@@ -36,6 +36,7 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : $default_tab;
 
 
 <div class="wrap">
+      <div id="gst-message" style="margin-top: 10px"></div>
       <!-- Print the page title -->
       <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
       <!-- Here are our tabs -->

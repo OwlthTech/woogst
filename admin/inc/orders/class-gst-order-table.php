@@ -104,14 +104,8 @@ if (!function_exists('display_wc_order_list_custom_column_content')):
                   case 'gst_details':
                         if ($claim_gst) {
                               $gst_holder_name = $order->get_meta('_billing_gst_trade_name', true);
-                              if (empty($gst_holder_name)) {
-                                    $gst_holder_name = get_post_meta($order->get_id(), '_billing_gst_trade_name', true);
-                              }
 
                               $gst_number = $order->get_meta('_billing_gst_number', true);
-                              if (empty($gst_number)) {
-                                    $gst_number = get_post_meta($order->get_id(), '_billing_gst_number', true);
-                              }
                         }
 
                         if (!empty($gst_holder_name)) {

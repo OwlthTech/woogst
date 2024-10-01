@@ -6,14 +6,30 @@
 
 class Woogst_Validator
 {
-    protected $is_woocommerce_installed;
-    protected $is_woocommerce_active;
-    protected $is_woo_tax_active;
-    protected $is_woo_gst_tax_class_exist;
-
-    function __construct()
+    public static function get_instance()
     {
+        // Store the instance locally to avoid private static replication.
+        static $instance = null;
 
+        // Only run these methods if they haven't been ran previously.
+        if (null === $instance) {
+            $instance = new self();
+        }
+
+        // Always return the instance.
+        return $instance;
+    }
+
+    public function __construct()
+    {
+        add_action('before_woocommerce_init', array($this, 'wc_compatability'));
+    }
+
+    public static function wc_compatability()
+    {
+        if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', WOOGST_PLUGIN_FILE, true );
+        }
     }
 
     public static function is_woocommerce_installed()
@@ -22,38 +38,34 @@ class Woogst_Validator
         return array_key_exists('woocommerce/woocommerce.php', $all_plugins);
     }
 
-    public static function is_woocommerce_active()
-    {
-        return in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option('active_plugins')));
-    }
-
     public static function is_woo_tax_active()
     {
         return wc_tax_enabled();
     }
 
-    public static function is_woo_gst_tax_class_slug_exist($slug = null)
+    public static function is_woocommerce_active()
     {
-        if (is_null($slug)) {
-            $slug = 'gst';
+        $active_plugins = (array) get_option('active_plugins', array());
+        if (is_multisite()) {
+            $active_plugins = array_merge($active_plugins, get_site_option('active_sitewide_plugins', array()));
         }
-        $tax_class_slugs = WC_Tax::get_tax_class_slugs();
-        return in_array($slug, $tax_class_slugs);
+        return in_array('woocommerce/woocommerce.php', $active_plugins) || array_key_exists('woocommerce/woocommerce.php', $active_plugins);
     }
 
 }
 
 
-
-if (!function_exists('validate_gst_number')) {
+// The main instance
+if (!function_exists('woogst_validator')) {
     /**
-     * Validates gst number regex pattern
-     * @param mixed $gst_number
-     * @return string
+     * Return instance of  Woogst_Validator class
+     *
+     * @since 1.0.0
+     *
+     * @return Woogst_Validator
      */
-    function validate_gst_number($gst_number)
-    {
-        // Add your logic to validate GST number format or other rules
-        return preg_match('/^[0-9]{2}[A-Z]{3}[ABCFGHLJPTF]{1}[A-Z]{1}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/', $gst_number);
+    function woogst_validator()
+    {//phpcs:ignore
+        return Woogst_Validator::get_instance();
     }
 }

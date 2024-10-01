@@ -95,7 +95,7 @@ function gst_slabs_tab_content($tab)
                                     </fieldset>
                                     <!-- <button type="button" id="create-gst-tax-class" class="button-secondary">Create GST Tax
                                           Rates</button> -->
-                                    <div id="gst-message" style="margin-top: 10px"></div>
+                                    
                               </td>
                         </tr>
                   </tbody>

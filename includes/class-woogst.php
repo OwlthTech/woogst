@@ -72,13 +72,14 @@ class Woogst {
 		} else {
 			$this->version = '1.0.0';
 		}
+		
 		$this->plugin_name = 'woogst';
 
 		$this->load_dependencies();
 		$this->set_locale();
 		$this->define_admin_hooks();
 		$this->define_public_hooks();
-		
+		$this->validate_woo_gst();
 		$this->define_invoice_hooks();
 		$this->define_gst_report_hooks();
 	}
@@ -153,11 +154,8 @@ class Woogst {
 	 * @access   private
 	 */
 	private function set_locale() {
-
 		$plugin_i18n = new Woogst_i18n();
-
 		$this->loader->add_action( 'plugins_loaded', $plugin_i18n, 'load_plugin_textdomain' );
-
 	}
 
 	/**
@@ -191,15 +189,33 @@ class Woogst {
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
 	}
 
-
+	/**
+	 * Defines reports
+	 * @since    1.0.0
+	 * @access   private
+	 */
 	private function define_gst_report_hooks() {
 		$woo_gst_report = woogst_report();
 		$this->loader->add_action('init', $woo_gst_report, 'init');
 	}
 
+	/**
+	 * Defines invoice
+	 * @since    1.0.0
+	 * @access   private
+	 */
 	private function define_invoice_hooks() {
 		$woo_invoice = woogst_invoice();
 		$this->loader->add_action('init', $woo_invoice, 'init');
+	}
+
+	/**
+	 * Adds HPOS Compatibility
+	 * @since    1.0.0
+	 * @access   private
+	 */
+	private function validate_woo_gst() {
+		$woogst_validator = woogst_validator();
 	}
 
 	/**

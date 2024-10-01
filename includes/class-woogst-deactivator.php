@@ -49,10 +49,26 @@ class Woogst_Deactivator
 				if ($role) {
 					// Remove custom capabilities for Woogst functionalities.
 					$role->remove_cap('manage_woogst_settings');
-					$role->remove_cap('view_gst_reports');
+
+					// Read
+					$role->remove_cap('read_gst_reports');
+					$role->remove_cap('read_private_gst_reports');
+
+					// Edit
+					$role->remove_cap('edit_gst_report');
 					$role->remove_cap('edit_gst_reports');
+					$role->remove_cap('edit_private_gst_reports');
+					$role->remove_cap('edit_published_gst_reports');
+					$role->remove_cap('edit_others_gst_reports');
+
+					// Publish
 					$role->remove_cap('publish_gst_reports');
+
+					// Delete
 					$role->remove_cap('delete_gst_reports');
+					$role->remove_cap('delete_published_gst_reports');
+					$role->remove_cap('delete_private_gst_reports');
+					$role->remove_cap('delete_others_gst_reports');
 				}
 			}
 		}

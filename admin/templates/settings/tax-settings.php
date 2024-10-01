@@ -6,6 +6,9 @@ function tax_setting_tab_content($tab)
     // Retrieve saved settings from the single option key
     $settings = woogst_get_options($tab);
     // checkout settings
+
+    $store_gst_name = isset($settings['store_gst_name']) ? $settings['store_gst_name'] : '';
+    $store_gst_number = isset($settings['store_gst_number']) ? $settings['store_gst_number'] : '';
     $gst_checkout = isset($settings['gst_checkout']) ? $settings['gst_checkout'] : 0;
     $gst_billing_state_validate = isset($settings['gst_billing_state_validate']) ? $settings['gst_billing_state_validate'] : 0;
 
@@ -19,10 +22,34 @@ function tax_setting_tab_content($tab)
         <table class="form-table">
             <tbody>
 
+                <!-- Store Settings -->
+                <tr>
+                    <th scope="row">Store Settings</th>
+                    <td>
+                        <fieldset data-id="store_gst_name">
+                            <legend class="screen-reader-text"><span>Store GST Trade/Legal Name</span></legend>
+                            <label for="store_gst_name">
+                                <input name="store_gst_name" type="text" id="store_gst_name" value="<?php echo $store_gst_name; ?>"
+                                    placeholder="Store GST Trade Name">
+                            </label>
+                            
+                        </fieldset>
+                        <fieldset data-id="store_gst_number">
+                            <legend class="screen-reader-text"><span>Store GST Registration Number</span></legend>
+                            <label for="store_gst_number">
+                                <input name="store_gst_number" type="text" id="store_gst_number" value="<?php echo $store_gst_number; ?>"
+                                    placeholder="Store GST Number">
+                                    <span class="message"></span>
+                            </label>
+                        </fieldset>
+                    </td>
+                </tr>
+
                 <!-- Checkout Page Settings -->
                 <tr>
                     <th scope="row">Checkout Page</th>
                     <td>
+                        <hr>
                         <fieldset data-id="gst_checkout">
                             <legend class="screen-reader-text"><span>Checkout page gst settings</span></legend>
                             <label for="gst_checkout">
@@ -44,9 +71,11 @@ function tax_setting_tab_content($tab)
 
                         <fieldset>
                             <p class="description">Store state:
-                                <strong><?php echo WC()->countries->get_base_state(); ?></strong></p>
+                                <strong><?php echo WC()->countries->get_base_state(); ?></strong>
+                            </p>
                             <p class="description">Store state:
-                                <strong><?php echo WC()->countries->get_base_country(); ?></strong></p>
+                                <strong><?php echo WC()->countries->get_base_country(); ?></strong>
+                            </p>
                         </fieldset>
                     </td>
                 </tr>

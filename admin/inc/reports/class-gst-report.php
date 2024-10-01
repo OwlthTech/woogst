@@ -425,7 +425,7 @@ if (!function_exists("generate_order_csv")) {
 // The main instance
 if (!function_exists('woogst_report')) {
     /**
-     * Return instance of  WooInvoice class
+     * Return instance of  GstReport class
      *
      * @since 1.0.0
      *

@@ -10,6 +10,8 @@ function permissions_tab_content($tab)
       global $wp_roles;
       $roles = $wp_roles->roles;
 
+      
+
       ?>
       <div class="wrap">
             <h1><?php esc_html_e('Woogst Permissions', 'woogst'); ?></h1>
@@ -45,10 +47,10 @@ function permissions_tab_content($tab)
                                                             <?php checked($role->has_cap('manage_woogst_settings'), true); ?> />
                                                 </td>
                                                 <td data-label="<?php esc_html_e('View GST Reports', 'woogst'); ?>">
-                                                      <input type="hidden" name="view_gst_reports[<?php echo esc_attr($role_slug); ?>]"
+                                                      <input type="hidden" name="read_gst_reports[<?php echo esc_attr($role_slug); ?>]"
                                                             value="0" />
                                                       <input type="checkbox"
-                                                            name="view_gst_reports[<?php echo esc_attr($role_slug); ?>]" value="1" <?php checked($role->has_cap('view_gst_reports'), true); ?> />
+                                                            name="read_gst_reports[<?php echo esc_attr($role_slug); ?>]" value="1" <?php checked($role->has_cap('read_gst_reports'), true); ?> />
                                                 </td>
                                                 <td data-label="<?php esc_html_e('Edit GST Reports', 'woogst'); ?>">
                                                       <input type="hidden" name="edit_gst_reports[<?php echo esc_attr($role_slug); ?>]"

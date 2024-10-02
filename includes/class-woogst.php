@@ -103,7 +103,6 @@ class Woogst {
 	 */
 	private function load_dependencies() {
 
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/inc/helper.php';
 		/**
 		 * The class responsible for orchestrating the actions and filters of the
 		 * core plugin.
@@ -128,11 +127,18 @@ class Woogst {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-woogst-public.php';
 
 		/**
-		 * Main functions files
+		 * Admin inc files
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/inc/gst/class-gst.php';
-		
+		// GST
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/inc/gst/class-woogst-gst.php';
+		// Invoice
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/inc/invoice/class-woogst-invoice.php';
+		// Orders
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/inc/orders/class-woogst-order-edit.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/inc/orders/class-woogst-order-table.php';
+		// Reports
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/inc/reports/class-woogst-report.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/inc/reports/class-woogst-report-table.php';
 
 		/**
 		 * Utils

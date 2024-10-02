@@ -1,6 +1,6 @@
 <?php
 
-class Gst_Report_Table
+class Woogst_Report_Table
 {
       /**
        * Gets an instance of this object.
@@ -63,6 +63,7 @@ class Gst_Report_Table
             unset($columns['comments']);
 
             // Add custom columns
+            $columns['report_stats'] = __('Report Stats', 'woogst');
             $columns['email_status'] = __('Email Status', 'woogst');
             $columns['report_duration'] = __('Report Duration', 'woogst');
             $columns['report_actions'] = __('Report Actions', 'woogst');
@@ -79,19 +80,44 @@ class Gst_Report_Table
        */
       public function woogst_gst_reports_custom_column($column, $post_id)
       {
+            $woogst_option = get_post_meta($post_id, 'woogst_report', true);
             switch ($column) {
                   case 'email_status':
-                        echo esc_html($this->woogst_gst_email_status_column_data($post_id));
+                        // Fetch the email_status from post meta
+                        $email_status = isset($woogst_option['sent_email']) ? "✔️" : "❌";
+                        echo $email_status;
                         break;
 
                   case 'report_duration':
                         // Assuming you have a custom field 'report_date'
-                        $report_date = get_post_meta($post_id, 'report_duration', true);
-                        echo esc_html($report_date ? $report_date : __('No Date', 'woogst'));
+                        echo '<b>From:</b> ' . esc_html($woogst_option['from'] ?? __('No Date', 'woogst')) . '<br/>';
+                        echo '<b>To:</b> ' . esc_html($woogst_option['to'] ?? __('No Date', 'woogst')) . '<br/>';
                         break;
 
                   case 'report_actions':
-                        echo $this->woogst_gst_report_actions_column_data($post_id);
+                        echo $this->woogst_gst_report_actions_column_data($post_id, $woogst_option);
+                        break;
+
+                  case 'report_stats':
+                        echo '<b>Order total:</b> ' . esc_html($woogst_option['report_total'] ?? __('No data', 'woogst')) . '<br/>';
+                        echo '<b>Total taxes:</b><br>';
+
+                        // Unserialize the report_total_tax meta value
+                        $report_total_tax = isset($woogst_option['report_total_tax']) ? maybe_unserialize($woogst_option['report_total_tax']) : [];
+
+                        // Check if there is valid data in the report_total_tax
+                        if (!empty($report_total_tax) && is_array($report_total_tax)) {
+                              // Use array_map to loop over the array and format the output
+                              array_map(function ($tax_amounts, $tax_type) {
+                                    // Get the tax rate and amount (e.g., 2.5000% => 5000)
+                                    foreach ($tax_amounts as $rate => $amount) {
+                                          // Format and print each tax type and its total
+                                          echo '<b>Total ' . esc_html($tax_type) . ' (' . esc_html($rate) . '%):</b> ' . esc_html(number_format($amount, 2)) . '<br/>';
+                                    }
+                              }, $report_total_tax, array_keys($report_total_tax));
+                        } else {
+                              echo esc_html(__('No data', 'woogst'));
+                        }
                         break;
             }
       }
@@ -116,40 +142,33 @@ class Gst_Report_Table
        * @param mixed $post_id
        * @return string
        */
-      public function woogst_gst_email_status_column_data($post_id)
-      {
-            // Fetch the email_status from post meta
-            $email_status = get_post_meta($post_id, 'email_status', true);
-            $email_status = $email_status ? "✔️" : "❌";
-
-            return $email_status;
-      }
 
       /**
        * Action columns data
        * @param mixed $post_id
        * @return string
        */
-      public function woogst_gst_report_actions_column_data($post_id)
+      public function woogst_gst_report_actions_column_data($post_id, $woogst_option)
       {
-            $regenerate = sprintf(
-                  '<a href="%s">%s</a>',
+
+            $regenerate = woogst_validator()->is_woocommerce_active() ? sprintf(
+                  '<a href="%s">%s</a><br/>',
                   esc_url(add_query_arg(['post_id' => $post_id, 'action' => 'regenerate_report'], admin_url('admin-post.php'))),
                   __('Regenerate Report', 'woogst')
-            );
+            ) : '';
 
             // Get email status and set action link
-            $email_status = get_post_meta($post_id, 'email_status', true);
+            $email_status = isset($woogst_option['sent_email']) ? $woogst_option['sent_email'] : 0;
             $email_status_text = $email_status ? __('Resend Email', 'woogst') : __('Send Email', 'woogst');
 
             $send_email = sprintf(
-                  '<a href="%s">%s</a>',
+                  '<a href="%s">%s</a><br/>',
                   esc_url(add_query_arg(['post_id' => $post_id, 'action' => 'send_gst_report_email'], admin_url('admin-post.php'))),
                   $email_status_text
             );
 
             // Download Report Link
-            $download_url = get_post_meta($post_id, 'csv_file_path', true);
+            $download_url = isset($woogst_option['report_csv_url']) ? $woogst_option['report_csv_url'] : '';
             $download_report = $download_url ? sprintf(
                   '<a href="%s" target="_blank">%s</a>',
                   esc_url($download_url),
@@ -157,7 +176,7 @@ class Gst_Report_Table
             ) : __('No CSV available', 'woogst');
 
             // Combine actions
-            $actions = $regenerate . '<br/>' . $send_email . '<br/>' . $download_report;
+            $actions = "{$regenerate}{$send_email}{$download_report}";
             return $actions;
       }
 
@@ -216,16 +235,16 @@ class Gst_Report_Table
 }
 
 // The main instance
-if (!function_exists('woogst_admin_gst_report_table')) {
+if (!function_exists('woogst_gst_report_table')) {
       /**
-       * Return instance of Gst_Report_Table class
+       * Return instance of Woogst_Report_Table class
        *
        * @since 1.0.0
        *
-       * @return Gst_Report_Table
+       * @return Woogst_Report_Table
        */
-      function woogst_admin_gst_report_table()
+      function woogst_gst_report_table()
       {//phpcs:ignore
-            return Gst_Report_Table::get_instance();
+            return Woogst_Report_Table::get_instance();
       }
 }

@@ -28,7 +28,7 @@ class Woogst_Validator
     public static function wc_compatability()
     {
         if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
-            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', WOOGST_PLUGIN_FILE, true );
+            \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', WOOGST_PLUGIN_FILE, true);
         }
     }
 
@@ -54,6 +54,18 @@ class Woogst_Validator
 
 }
 
+if (!function_exists('validate_gst_number')) {
+    /**
+     * Validates gst number regex pattern
+     * @param mixed $gst_number
+     * @return string
+     */
+    function validate_gst_number($gst_number)
+    {
+        // Add your logic to validate GST number format or other rules
+        return preg_match('/^[0-9]{2}[A-Z]{3}[ABCFGHLJPTF]{1}[A-Z]{1}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/', $gst_number);
+    }
+}
 
 // The main instance
 if (!function_exists('woogst_validator')) {
@@ -69,3 +81,17 @@ if (!function_exists('woogst_validator')) {
         return Woogst_Validator::get_instance();
     }
 }
+
+
+if (!function_exists('is_hpos_enabled')):
+    function is_hpos_enabled()
+    {
+        // Check using the built-in method
+        if (class_exists('\Automattic\WooCommerce\Utilities\OrderUtil')) {
+            return \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();
+        }
+
+        // Check using the option in the database (legacy method)
+        return get_option('woocommerce_use_custom_orders_table', 'no') === 'yes';
+    }
+endif;

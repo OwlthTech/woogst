@@ -55,6 +55,17 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : $default_tab;
 
       <div class="tab-content">
             <div class="wrap">
+                  <?php
+                  if (!(woogst_validator()->is_woocommerce_active()) && (woogst_validator()->is_woocommerce_installed())) {
+                        echo 'WooGST requires WooCommerce plugin, please activate';
+                        return;
+                  }
+
+                  if (!(woogst_validator()->is_woocommerce_active()) && !(woogst_validator()->is_woocommerce_installed())) {
+                        echo 'WooGST requires WooCommerce plugin, please install and activate';
+                        return;
+                  }
+                  ?>
                   <?php switch ($tab):
                         case 'gst-slabs':
                               gst_slabs_tab_content('gst-slabs');

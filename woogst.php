@@ -17,7 +17,7 @@
  * Plugin URI:        https://owlth.tech
  * Description:       WooCommerce GST Plugin
  * Version:           1.0.0
- * Requires Plugins: woocommerce
+ * Requires Plugins: 
  * Author:            Owlth Tech
  * Author URI:        https://owlth.tech/
  * License:           GPL-2.0+
@@ -38,8 +38,9 @@ if (!defined('WPINC')) {
  */
 define('WOOGST_VERSION', '1.0.0');
 define('WOOGST_BASE_NAME', plugin_basename(__FILE__));
-define( 'WOOGST_PLUGIN_FILE', __FILE__ );
 define('WOOGST_OPTION_PREFIX', 'woogst_');
+define( 'WOOGST_PLUGIN_FILE', __FILE__ );
+define( 'WOOGST_INVOICE_TEMPLATE_DIR', plugin_dir_path( __FILE__ ) . 'admin/templates/invoice/');
 /**
  * The code that runs during plugin activation.
  * This action is documented in includes/class-woogst-activator.php
@@ -82,6 +83,7 @@ require plugin_dir_path(__FILE__) . 'includes/class-woogst.php';
  * @since    1.0.0
  */
 
+ 
 function run_woogst()
 {
 

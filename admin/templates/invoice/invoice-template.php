@@ -1,20 +1,6 @@
 <?php
 // Get order details
-// $order_id = $order->get_id();
-// $order_date = $order->get_date_created()->format('Y-m-d');
-error_log(print_r($order, true));
 $ordered_items = $order->get_items();
-
-// $order_total = $order->get_total();
-// $order_billing_name = $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
-// $billing_email = $order->get_billing_email();
-// $billing_phone = $order->get_billing_phone();
-
-// // Get billing address fields
-// $billing_address_1 = get_post_meta($order_id, '_billing_address_1', true);
-// $billing_city = get_post_meta($order_id, '_billing_city', true);
-// $billing_postcode = get_post_meta($order_id, '_billing_postcode', true);
-// $billing_country = get_post_meta($order_id, '_billing_country', true);
 
 $store_gst = get_option('owlth-wp-plugin')['store_gst_number'];
 
@@ -28,14 +14,7 @@ $discount_total = $order->get_discount_total();
 $claim_gst = $order->get_meta('_billing_claim_gst', true);
 if ($claim_gst) {
     $gst_holder_name = $order->get_meta('_billing_gst_trade_name', true);
-    if (empty($gst_holder_name)) {
-        $gst_holder_name = get_post_meta($order_id, '_billing_gst_trade_name', true);
-    }
-
     $gst_number = $order->get_meta('_billing_gst_number', true);
-    if (empty($gst_number)) {
-        $gst_number = get_post_meta($order_id, '_billing_gst_number', true);
-    }
 }
 $custom_logo_id = get_theme_mod('custom_logo');
 $logo = wp_get_attachment_image_src($custom_logo_id, 'full');

@@ -10,7 +10,7 @@
  * @subpackage Woogst/admin
  */
 
-require_once plugin_dir_path(dirname(__FILE__)) . 'admin/inc/gst/class-gst.php';
+// require_once plugin_dir_path(dirname(__FILE__)) . 'admin/inc/gst/class-woogst-gst.php';
 
 /**
  * The admin-specific functionality of the plugin.
@@ -43,12 +43,8 @@ class Woogst_Admin
         // Sets notice using transient options
         add_action('admin_notices', 'woo_gst_admin_notice_message');
 
-        // Checks woocommerce installed & activated and sets admin notice
-        add_action('admin_notices', 'set_wp_admin_notice_active_woo');
-
         add_action('wp_ajax_woogst_create_gst_tax_class', 'woogst_create_gst_tax_class');
         add_action('wp_ajax_nopriv_woogst_create_gst_tax_class', 'woogst_create_gst_tax_class');
-        // add_action('init', 'woogst_create_gst_tax_rates', 10, 2);
 
         add_action('wp_ajax_woogst_get_tax_rates', 'woogst_get_tax_rates');
         add_action('wp_ajax_nopriv_woogst_get_tax_rates', 'woogst_get_tax_rates');
@@ -241,6 +237,14 @@ class Woogst_Admin
         if (!current_user_can('manage_woogst_settings')) {
             set_wp_admin_notice('You are not authorized to access this page.', 'error');
             return;
+        }
+
+        if(!(woogst_validator()->is_woocommerce_active()) && (woogst_validator()->is_woocommerce_installed())) {
+            set_wp_admin_notice('Please activate woocommerce', 'error');
+        }
+
+        if(!(woogst_validator()->is_woocommerce_active()) && !(woogst_validator()->is_woocommerce_installed())) {
+            set_wp_admin_notice('Please install and activate woocommerce', 'error');
         }
 
         // Check if the form has been submitted

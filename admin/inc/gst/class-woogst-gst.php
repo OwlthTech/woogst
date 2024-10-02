@@ -6,11 +6,6 @@ if (!defined('ABSPATH')) {
 }
 
 
-require_once plugin_dir_path(  dirname(__FILE__) ) . 'orders/index.php';
-require_once plugin_dir_path(  dirname(__FILE__) ) . 'reports/index.php';
-
-
-
 class Gst
 {
       /**
@@ -47,19 +42,19 @@ class Gst
             /**
              * Intantiate - WooCommerce > Orders table customizations
              */
-            $woo_order_table = woogst_admin_gst_order_table();
+            $woo_order_table = woogst_order_table();
             $woo_order_table->init();
 
             /**
              * Intantiate - WooCommerce > Orders > edit single order customizations
              */
-            $woo_single_order = woogst_admin_gst_single_order_edit();
+            $woo_single_order = woogst_order_edit();
             $woo_single_order->init();
 
             /**
              * Intantiate - 'gst-reports' actions and hooks
              */
-            $woogst_admin_gst_report_table = woogst_admin_gst_report_table();
+            $woogst_admin_gst_report_table = woogst_gst_report_table();
             $woogst_admin_gst_report_table->init();
       }
 

@@ -1,16 +1,19 @@
 jQuery(document).ready(function ($) {
+
     $('#billing_claim_gst').attr('checked', false);
     $('#billing_claim_gst').attr('value', 0);
     // Function to toggle GST fields based on checkbox state
     function toggleGstFields() {
         if ($('#billing_claim_gst').is(':checked')) {
-            $('.gst-field').slideDown();
-            $('.gst-field').show(); // Show fields if checkbox is checked
+            $('#gst_fields').slideDown();
+            $('#gst_fields').show(); // Show fields if checkbox is checked
+            $('#gst_fields').find("input,textarea").removeAttr("disabled");
             $('#billing_claim_gst').attr('checked', true);
             $('#billing_claim_gst').attr('value', 1);
         } else {
-            $('.gst-field').slideUp();
-            // $('.gst-field').hide(); // Hide fields if checkbox is unchecked
+            $('#gst_fields').slideUp();
+            $('#gst_fields').find("input,textarea").prop("disabled", true);
+            // $('#gst_fields').hide(); // Hide fields if checkbox is unchecked
             $('#billing_claim_gst').attr('checked', false);
             $('#billing_claim_gst').attr('value', 0);
         }
@@ -20,7 +23,11 @@ jQuery(document).ready(function ($) {
     toggleGstFields();
 
     // Toggle visibility based on checkbox change event
-    $('#billing_claim_gst').change(function () {
+    $(document).on('change', '#billing_claim_gst', function () {
+        toggleGstFields();
+    });
+
+    $(document.body).on('updated_checkout', function () {
         toggleGstFields();
     });
 

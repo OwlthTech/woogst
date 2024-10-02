@@ -30,9 +30,6 @@ if (!function_exists('log_report_status')) {
 }
 
 
-
-
-
 /**
  * Admin notice and transients for notice
  * 
@@ -64,7 +61,7 @@ function woo_gst_admin_notice_message()
 // Checks WooCommerce in installed & active plugins and sets admin notice
 function set_wp_admin_notice_active_woo()
 {
-    if (!Woogst_Validator::is_woocommerce_installed() && !Woogst_Validator::is_woocommerce_active()) {
+    if (!woogst_validator()->is_woocommerce_installed() || !woogst_validator()->is_woocommerce_active()) {
         set_wp_admin_notice("Please install & activate woocommerce plugin", 'error');
     }
 }

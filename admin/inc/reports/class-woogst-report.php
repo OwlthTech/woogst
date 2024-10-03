@@ -43,17 +43,17 @@ class Woogst_Report
         add_action('woogst_send_monthly_tax_report', array($this, 'generate_save_and_send_report'));
 
         // just for testing
-        add_action('wp', array($this, 'generate_save_and_send_report'));
+        // add_action('wp', array($this, 'generate_save_and_send_report'));
 
     }
 
-    public function handle_scheduled_report_action() {
+    public function handle_scheduled_report_action()
+    {
         // Check if the report generation is enabled in the plugin settings
-        $enabled = woogst_get_options('gst-reports');
-        // var_dump($enabled['schedule_report']);
-        
+        $schedule_report_enabled = woogst_get_option_key('gst-reports', 'schedule_report');
+
         // If the report is enabled and not already scheduled
-        if (isset($enabled) && $enabled['schedule_report']) {
+        if (isset($schedule_report_enabled) && $schedule_report_enabled) {
             if (!wp_next_scheduled('woogst_send_monthly_tax_report')) {
                 // Schedule the report if it's not already scheduled
                 log_report_status('Scheduling the monthly report');
@@ -67,142 +67,146 @@ class Woogst_Report
             }
         }
     }
-    
-    
+
+
 
     public function schedule_report()
     {
         if (!wp_next_scheduled('woogst_send_monthly_tax_report')) {
             log_report_status('setting new woogst_send_monthly_tax_report.');
-            
+
             // Get the WordPress time zone
             $timezone = new DateTimeZone(wp_timezone_string());
-            
+
             // Set the event to trigger at the first day of next month 08:00 AM in the site’s timezone
             $next_schedule = new DateTime('first day of next month 08:00', $timezone);
             $next_schedule_timestamp = $next_schedule->getTimestamp();
-            
+
             // Schedule the single event (it will only run once)
             wp_schedule_single_event($next_schedule_timestamp, 'woogst_send_monthly_tax_report');
             log_report_status('schedule_report method called to execute at: ' . wp_date('d-m-Y', $next_schedule_timestamp) . ' @ ' . wp_date('H:i', $next_schedule_timestamp) . ' AM');
-            
+
             set_wp_admin_notice('Next monthly order tax report is scheduled on: ' . wp_date('d-m-Y', $next_schedule_timestamp) . ' @ ' . wp_date('H:i', $next_schedule_timestamp) . ' AM', 'success');
         }
     }
 
 
 
-    public function generate_save_and_send_report($month = null, $year = null)
+    public function generate_save_and_send_report($month = null, $year = null, $report_id = null, $schedule = true, $send_report_email = true)
     {
-        if (isset($_GET['test_report'])) {
-            error_log('calling it');
-            $orders = get_monthly_orders(null, null);
-
-            // Extract order IDs and other relevant details from order data for storage
-            $simplified_order_data = array_map(function ($order) {
-                return array(
-                    'order_id' => $order['order_id'],  // Only store order IDs
-                    'order_total' => $order['order_total'], // Optionally store total amount
-                );
-            }, $orders['order_data']);
-
-            // Prepare email content and generate CSV
-            $order_stats = get_order_statistics($orders);
-            $email_body = format_statistics_for_email($order_stats);
-            $report_csv = generate_csv($orders['order_data']);
-
-            // Send the email with CSV attachment
-            $to = 'owlthtech@gmail.com';
-            $subject = 'Orgotel Organic - Monthly Order & Tax Stats';
-            $headers = array('Content-Type: text/html; charset=UTF-8');
-            $attachments = array($report_csv['file_path']);
-            $sent = wp_mail($to, $subject, $email_body, $headers, $attachments);
-            // Log email status
-            $email_status = $sent ? '1' : '0';
-
-            if ($email_status) {
-                log_report_status('Report email sent');
-            } else {
-                log_report_status('Report email failed');
+        // If no month and year are passed, use the previous month and current year as default
+        if (is_null($month) && is_null($year)) {
+            $prev = new DateTime('first day of last month');
+            $suffix = $prev->format('m-Y');
+        }
+        if(!is_null($month) && !is_null($year)) {
+            if (is_numeric($month)) {
+                $month = DateTime::createFromFormat('!m', $month)->format('F');
             }
+            $suffix = "{$month}-{$year}";
+        }
+        $title = 'Order Tax Report for ' . $suffix;
 
-            $report_meta = array(
-                'woogst_report' => array(
-                    'report_csv_url' => esc_url_raw($report_csv['file_url']),
-                    'from' => $orders['from'],
-                    'to' => $orders['to'],
-                    'sent_email'    => $email_status,
-                    'report_total'  => wc_format_decimal($order_stats['total_order_amount'], 2),
-                    'report_total_tax' => $order_stats['total_tax_amount_by_label'],
-                    'report_orders' => $simplified_order_data
-                )
+        $orders = get_monthly_orders($month, $year);
+
+        // Do actions
+        $order_stats = get_order_statistics($orders);
+        $report_csv = generate_csv($orders['order_data'],$month, $year);
+        $email_body = format_statistics_for_email($order_stats);
+        if($send_report_email) {
+            $email_status = send_schedule_report_mail($title, $email_body, $report_csv['file_path']);
+        }
+        // Extract order IDs and other relevant details from order data for storage
+        $simplified_order_data = array_map(function ($order) {
+            return array(
+                'order_id' => $order['order_id'],  // Only store order IDs
+                'order_total' => $order['order_total'], // Optionally store total amount
             );
+        }, $orders['order_data']);
 
-            // Log the report details in 'gst-reports' CPT
-            $report_id = wp_insert_post(array(
-                'post_type' => 'gst-reports',
-                'post_title' => 'Order Report for ' . date('F Y'),
-                'post_content' => $email_body,
-                'post_status' => 'private',
-                'meta_input' => $report_meta
-            ));
+        // Save gst-reports post
+        $report_meta = array(
+            'woogst_report' => array(
+                'report_csv_url' => esc_url_raw($report_csv['file_url']),
+                'from' => $orders['from'],
+                'to' => $orders['to'],
+                'sent_email' => isset($email_status) ? 1 : 0,
+                'report_total' => wc_format_decimal($order_stats['total_order_amount'], 2),
+                'report_total_tax' => $order_stats['total_tax_amount_by_label'],
+                'report_orders' => $simplified_order_data
+            )
+        );
 
+        $post_data = array(
+            'post_type' => 'gst-reports',
+            'post_title' => $title,
+            'post_content' => $email_body,
+            'post_status' => 'private',
+            'meta_input' => $report_meta,
+        );
+        error_log('post title-> '. 'Order Report for ' . date('F Y'));
 
-            error_log(print_r($order_stats, true));
+        if (!is_null($report_id)) {
+            $post_data['ID'] = $report_id;
+        }
+        $report_id = wp_insert_post($post_data);
 
-            log_report_status("Order report post is created -> " . $report_id);
+        log_report_status("Order report is created -> " . $report_id);
 
-
-            // After sending the report, reschedule the next event for the first day of the next month
-            $timezone = new DateTimeZone(wp_timezone_string());
-            $next_schedule = new DateTime('first day of next month 08:00', $timezone);
-            $next_schedule_timestamp = $next_schedule->getTimestamp();
+        // After sending the report, reschedule the next event for the first day of the next month
+        $timezone = new DateTimeZone(wp_timezone_string());
+        $next_schedule = new DateTime('first day of next month 08:00', $timezone);
+        $next_schedule_timestamp = $next_schedule->getTimestamp();
+        if($schedule) {
             wp_schedule_single_event($next_schedule_timestamp, 'woogst_send_monthly_tax_report');
         }
+        return true;
     }
 }
 
-if (!function_exists('get_report_directory')) {
-    function get_report_directory()
+/**
+ * Main actions of schedule reporting
+ */
+
+if (!function_exists('get_order_statistics')) {
+    function get_order_statistics($order_data)
     {
-        // File path for the CSV
-        $upload_dir = wp_upload_dir();
-        // Check if the order_reports directory exists; if not, create it
-        $reports_directory = $upload_dir['basedir'] . '/order-reports/';
-        // Ensure that the custom order_reports directory exists
-        if (!file_exists($reports_directory)) {
-            if (!mkdir($reports_directory, 0755, true)) {
-                error_log("Failed to create the reports directory: {$reports_directory}");
-            } else {
-                error_log("Reports directory created successfully: {$reports_directory}");
+        // Variables to hold statistics
+        $total_order_amount = 0;
+        $total_tax_amount_by_label = array();
+
+        // Loop through the orders to gather statistics
+        foreach ($order_data['order_data'] as $order) {
+            // Add up total order amount
+            $total_order_amount += $order['order_total'];
+
+            // Loop through tax classes for each order to gather tax details
+            foreach ($order['tax_classes'] as $tax_class) {
+                $label = $tax_class['label'];   // Tax label (e.g., VAT, GST)
+                $rate = $tax_class['rate'];     // Tax rate (e.g., 5%, 18%)
+                $tax_amount = $tax_class['amount']; // Tax amount for this rate
+
+                // Group tax by label and rate
+                if (!isset($total_tax_amount_by_label[$label])) {
+                    $total_tax_amount_by_label[$label] = array();
+                }
+
+                if (!isset($total_tax_amount_by_label[$label][$rate])) {
+                    $total_tax_amount_by_label[$label][$rate] = 0;
+                }
+
+                // Add tax amount to the total for this label and rate
+                $total_tax_amount_by_label[$label][$rate] += $tax_amount;
             }
         }
-        return $reports_directory;
+
+        // Return statistics as an array
+        return array(
+            'total_order_amount' => $total_order_amount,
+            'total_tax_amount_by_label' => $total_tax_amount_by_label
+        );
     }
 }
-
-if (!function_exists('woogst_schedule_report_notice')) {
-    function woogst_schedule_report_notice()
-    {
-        // Check if the cron job has been scheduled and if we need to display the notice
-        $timestamp = wp_next_scheduled('woogst_send_monthly_tax_report');
-        $cron_scheduled_notice_dismissed = get_option('woogst_cron_scheduled_notice_dismissed');
-
-        if ($timestamp && !$cron_scheduled_notice_dismissed) {
-            // Get the WordPress timezone
-            $wp_timezone = wp_timezone();
-
-            // Convert the timestamp to the correct timezone
-            $scheduled_time = new DateTime('@' . $timestamp);
-            $scheduled_time->setTimezone($wp_timezone);
-
-
-            // Display the notice with the correct time in WordPress timezone
-            // echo '<div class="notice notice-success is-dismissible" id="woogst-cron-notice"><p>Cron job is scheduled to run at: ' . $scheduled_time->format('Y-m-d H:i:s') . '</p></div>';
-        }
-    }
-}
-
 
 if (!function_exists('generate_csv')) {
     function generate_csv($orders_data, $month = null, $year = null)
@@ -212,9 +216,13 @@ if (!function_exists('generate_csv')) {
             $prev = new DateTime('first day of last month');
             $suffix = $prev->format('m-Y');
         }
+        if(!is_null($month) && !is_null($year)) {
+            $suffix = "{$month}-{$year}";
+        }
 
         // Set the file name based on the passed or default month and year
         $file_name = "woogst-tax-report-{$suffix}.csv";
+        error_log("FIle name:".$file_name);
         $reports_directory = get_report_directory();
         $csv_file_path = "{$reports_directory}{$file_name}";
         // Open file for writing
@@ -321,26 +329,64 @@ if (!function_exists('format_statistics_for_email')) {
 
 }
 
+if (!function_exists('send_schedule_report_mail')) {
+    function send_schedule_report_mail($title, $email_body, $report_csv)
+    {
+        $woogst_report_settings = woogst_get_options('gst-reports');
+
+        if (isset($woogst_report_settings['schedule_report_email']) && isset($woogst_report_settings['schedule_report_email_id']) && $woogst_report_settings['schedule_report_email_id'] != '') {
+            $to = $woogst_report_settings['schedule_report_email_id'];
+        }
+        if (isset($woogst_report_settings['schedule_report_email']) && isset($woogst_report_settings['schedule_report_email_id']) && $woogst_report_settings['schedule_report_email_id'] == '') {
+            $to = get_bloginfo('admin_email');
+        }
+        $subject = get_bloginfo('name') . ' - ' . $title;
+        $headers = array('Content-Type: text/html; charset=UTF-8');
+        $attachments = array($report_csv);
+        $sent = wp_mail($to, $subject, $email_body, $headers, $attachments);
+
+        if ($sent) {
+            log_report_status('Report email sent');
+            return true;
+        } else {
+            log_report_status('Report email failed');
+            return false;
+        }
+    }
+}
+
+/**
+ * Helper functions
+ */
+
 if (!function_exists('get_monthly_orders')) {
     function get_monthly_orders($month = null, $year = null)
     {
-        // If $month or $year are null, use the current month and year
-        if (empty($month) || is_null($month)) {
-            $month = date('F');  // Current month as a full textual representation (e.g., 'October')
-        }
-        if (empty($year) || is_null($year)) {
-            $year = date('Y');  // Current year (e.g., '2024')
+        // Ensure $month is a valid string (e.g., "October") or number (e.g., "10")
+        if (empty($month) || is_null($month) || !is_string($month) && !is_numeric($month)) {
+            $month = date('m');  // Default to current month as numeric (e.g., '10')
         }
 
-        // Check if both month and year are empty and default to this month
-        if ((empty($month) || is_null($month)) && (empty($year) || is_null($year))) {
-            $first_day_of_month = new DateTime('first day of this month');
-            $last_day_of_month = new DateTime('last day of this month');
-        } else {
-            // Safe to use sprintf now
+        // Convert numeric month to full textual format (e.g., 'October')
+        if (is_numeric($month)) {
+            $month = DateTime::createFromFormat('!m', $month)->format('F');
+        }
+
+        // Ensure $year is a valid string or number (e.g., "2024")
+        if (empty($year) || is_null($year) || !is_numeric($year)) {
+            $year = date('Y');  // Default to current year
+        }
+
+        // Now safely use sprintf for date creation
+        try {
+            // Convert to a valid date string
             $date_string = sprintf('first day of %s %s', $month, $year);
             $first_day_of_month = new DateTime($date_string);
             $last_day_of_month = new DateTime($first_day_of_month->format('Y-m-t'));
+        } catch (Exception $e) {
+            // Handle any errors in date creation
+            error_log('Error creating date: ' . $e->getMessage());
+            return null;
         }
 
         // Set the time to the start and end of the day for inclusivity
@@ -412,45 +458,47 @@ if (!function_exists('get_monthly_orders')) {
     }
 }
 
-if (!function_exists('get_order_statistics')) {
-    function get_order_statistics($order_data)
+if (!function_exists('get_report_directory')) {
+    function get_report_directory()
     {
-        // Variables to hold statistics
-        $total_order_amount = 0;
-        $total_tax_amount_by_label = array();
-
-        // Loop through the orders to gather statistics
-        foreach ($order_data['order_data'] as $order) {
-            // Add up total order amount
-            $total_order_amount += $order['order_total'];
-
-            // Loop through tax classes for each order to gather tax details
-            foreach ($order['tax_classes'] as $tax_class) {
-                $label = $tax_class['label'];   // Tax label (e.g., VAT, GST)
-                $rate = $tax_class['rate'];     // Tax rate (e.g., 5%, 18%)
-                $tax_amount = $tax_class['amount']; // Tax amount for this rate
-
-                // Group tax by label and rate
-                if (!isset($total_tax_amount_by_label[$label])) {
-                    $total_tax_amount_by_label[$label] = array();
-                }
-
-                if (!isset($total_tax_amount_by_label[$label][$rate])) {
-                    $total_tax_amount_by_label[$label][$rate] = 0;
-                }
-
-                // Add tax amount to the total for this label and rate
-                $total_tax_amount_by_label[$label][$rate] += $tax_amount;
+        // File path for the CSV
+        $upload_dir = wp_upload_dir();
+        // Check if the order_reports directory exists; if not, create it
+        $reports_directory = $upload_dir['basedir'] . '/order-reports/';
+        // Ensure that the custom order_reports directory exists
+        if (!file_exists($reports_directory)) {
+            if (!mkdir($reports_directory, 0755, true)) {
+                error_log("Failed to create the reports directory: {$reports_directory}");
+            } else {
+                error_log("Reports directory created successfully: {$reports_directory}");
             }
         }
-
-        // Return statistics as an array
-        return array(
-            'total_order_amount' => $total_order_amount,
-            'total_tax_amount_by_label' => $total_tax_amount_by_label
-        );
+        return $reports_directory;
     }
 }
+
+if (!function_exists('woogst_schedule_report_notice')) {
+    function woogst_schedule_report_notice()
+    {
+        // Check if the cron job has been scheduled and if we need to display the notice
+        $timestamp = wp_next_scheduled('woogst_send_monthly_tax_report');
+        $cron_scheduled_notice_dismissed = get_option('woogst_cron_scheduled_notice_dismissed');
+
+        if ($timestamp && !$cron_scheduled_notice_dismissed) {
+            // Get the WordPress timezone
+            $wp_timezone = wp_timezone();
+
+            // Convert the timestamp to the correct timezone
+            $scheduled_time = new DateTime('@' . $timestamp);
+            $scheduled_time->setTimezone($wp_timezone);
+
+
+            // Display the notice with the correct time in WordPress timezone
+            // echo '<div class="notice notice-success is-dismissible" id="woogst-cron-notice"><p>Cron job is scheduled to run at: ' . $scheduled_time->format('Y-m-d H:i:s') . '</p></div>';
+        }
+    }
+}
+
 
 // The main instance
 if (!function_exists('woogst_report')) {

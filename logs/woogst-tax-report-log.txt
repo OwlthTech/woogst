@@ -4,3 +4,179 @@
 [2024-10-02 23:28:35] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
 [2024-10-02 23:28:40] - Report email sent
 [2024-10-02 23:28:40] - Order report post is created -> 8028
+[2024-10-03 12:40:59] - Scheduled report generation has been disabled.
+[2024-10-03 12:44:20] - Scheduling the monthly report
+[2024-10-03 12:44:20] - setting new woogst_send_monthly_tax_report.
+[2024-10-03 12:44:20] - schedule_report method called to execute at: 01-11-2024 @ 08:00 AM
+[2024-10-03 15:42:06] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 15:42:11] - Report email sent
+[2024-10-03 15:42:11] - Order report post is created -> 8051
+[2024-10-03 15:42:20] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 15:42:25] - Report email sent
+[2024-10-03 15:42:25] - Order report post is created -> 8052
+[2024-10-03 15:42:39] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 15:42:43] - Report email sent
+[2024-10-03 15:42:43] - Order report post is created -> 8054
+[2024-10-03 15:44:47] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 15:44:51] - Report email sent
+[2024-10-03 15:44:51] - Order report post is created -> 8055
+[2024-10-03 15:45:14] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 15:45:18] - Report email sent
+[2024-10-03 15:45:18] - Order report post is created -> 8057
+[2024-10-03 15:55:42] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 15:55:46] - Report email sent
+[2024-10-03 15:55:46] - Order report post is created -> 8059
+[2024-10-03 15:59:43] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 15:59:47] - Report email sent
+[2024-10-03 15:59:47] - Order report post is created -> 8064
+[2024-10-03 15:59:59] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 16:00:03] - Report email sent
+[2024-10-03 16:00:03] - Order report post is created -> 8065
+[2024-10-03 16:00:25] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 16:00:30] - Report email sent
+[2024-10-03 16:00:30] - Order report post is created -> 8066
+[2024-10-03 16:04:55] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 16:04:59] - Report email sent
+[2024-10-03 16:04:59] - Order report post is created -> 8067
+[2024-10-03 16:05:14] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 16:05:18] - Report email sent
+[2024-10-03 16:05:18] - Order report post is created -> 8068
+[2024-10-03 16:05:56] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 16:06:00] - Report email sent
+[2024-10-03 16:06:00] - Order report post is created -> 8069
+[2024-10-03 17:08:52] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 17:08:57] - Report email sent
+[2024-10-03 17:11:54] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 17:11:58] - Report email sent
+[2024-10-03 17:16:16] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 17:16:20] - Report email sent
+[2024-10-03 17:16:20] - Order report post is created -> 8113
+[2024-10-03 17:31:22] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 17:31:26] - Report email sent
+[2024-10-03 17:31:26] - Order report post is created -> 8116
+[2024-10-03 17:32:57] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 17:33:00] - Report email sent
+[2024-10-03 17:33:01] - Order report post is created -> 8118
+[2024-10-03 17:36:11] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 17:36:15] - Report email sent
+[2024-10-03 17:36:15] - Order report post is created -> 0
+[2024-10-03 17:44:48] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 17:44:52] - Report email sent
+[2024-10-03 17:44:53] - Order report post is created -> 8120
+[2024-10-03 17:51:21] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 17:51:25] - Report email sent
+[2024-10-03 17:51:25] - Order report post is created -> 8121
+[2024-10-03 17:53:40] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 17:53:44] - Report email sent
+[2024-10-03 17:53:44] - Order report post is created -> 8122
+[2024-10-03 17:57:45] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 17:57:49] - Report email sent
+[2024-10-03 17:57:49] - Order report post is created -> 8123
+[2024-10-03 18:44:36] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 18:44:40] - Report email sent
+[2024-10-03 18:44:40] - Order report post is created -> 8140
+[2024-10-03 18:44:41] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 18:44:45] - Report email sent
+[2024-10-03 18:44:45] - Order report post is created -> 8140
+[2024-10-03 18:46:44] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 18:46:47] - Report email sent
+[2024-10-03 18:46:48] - Order report post is created -> 8141
+[2024-10-03 18:49:31] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 18:49:34] - Report email sent
+[2024-10-03 18:49:34] - Order report post is created -> 8143
+[2024-10-03 18:52:19] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 18:52:23] - Report email sent
+[2024-10-03 18:52:23] - Order report post is created -> 8144
+[2024-10-03 19:01:57] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 19:02:01] - Report email sent
+[2024-10-03 19:02:01] - Order report post is created -> 8148
+[2024-10-03 19:28:01] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 19:28:06] - Report email sent
+[2024-10-03 19:28:06] - Order report post is created -> 8164
+[2024-10-03 19:39:33] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 19:39:37] - Report email sent
+[2024-10-03 19:39:37] - Order report post is created -> 8165
+[2024-10-03 19:41:39] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 19:41:43] - Report email sent
+[2024-10-03 19:41:43] - Order report post is created -> 8166
+[2024-10-03 19:46:40] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 19:46:44] - Report email sent
+[2024-10-03 19:46:44] - Order report post is created -> 8168
+[2024-10-03 19:48:04] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 19:48:08] - Report email sent
+[2024-10-03 19:48:08] - Order report post is created -> 8169
+[2024-10-03 19:51:55] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 19:52:00] - Report email sent
+[2024-10-03 19:52:00] - Order report post is created -> 8170
+[2024-10-03 19:54:10] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 19:54:14] - Report email sent
+[2024-10-03 19:54:14] - Order report post is created -> 8171
+[2024-10-03 19:58:25] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 19:58:29] - Report email sent
+[2024-10-03 19:58:29] - Order report post is created -> 8172
+[2024-10-03 20:01:34] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 20:01:38] - Report email sent
+[2024-10-03 20:01:38] - Order report post is created -> 8173
+[2024-10-03 20:02:43] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 20:02:47] - Report email sent
+[2024-10-03 20:02:47] - Order report post is created -> 8174
+[2024-10-03 20:03:42] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 20:03:47] - Report email sent
+[2024-10-03 20:03:47] - Order report post is created -> 8175
+[2024-10-03 20:06:16] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 20:06:20] - Report email sent
+[2024-10-03 20:06:20] - Order report post is created -> 8176
+[2024-10-03 20:07:30] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 20:07:34] - Report email sent
+[2024-10-03 20:15:46] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 20:15:50] - Report email sent
+[2024-10-03 20:16:54] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 20:16:58] - Report email sent
+[2024-10-03 20:21:11] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 20:21:15] - Report email sent
+[2024-10-03 20:21:15] - Order report post is created -> 8180
+[2024-10-03 20:22:17] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 20:22:21] - Report email sent
+[2024-10-03 20:22:21] - Order report post is created -> 8181
+[2024-10-03 20:58:01] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 20:58:05] - Report email sent
+[2024-10-03 20:58:05] - Order report post is created -> 8191
+[2024-10-03 21:24:34] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 21:24:38] - Report email sent
+[2024-10-03 21:24:38] - Order report post is created -> 8192
+[2024-10-03 21:31:58] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 21:31:58] - Order report is created -> 8194
+[2024-10-03 21:32:25] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 21:32:30] - Report email sent
+[2024-10-03 21:32:30] - Order report is created -> 8195
+[2024-10-03 21:35:26] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 21:35:26] - Order report is created -> 8197
+[2024-10-03 21:39:39] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 21:39:39] - Order report is created -> 8198
+[2024-10-03 21:39:50] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 21:39:50] - Order report is created -> 8199
+[2024-10-03 21:40:45] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 21:40:45] - Order report is created -> 8200
+[2024-10-03 21:41:57] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 21:41:57] - Order report is created -> 8201
+[2024-10-03 21:42:25] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 21:42:25] - Order report is created -> 8202
+[2024-10-03 21:45:23] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 21:45:23] - Order report is created -> 8203
+[2024-10-03 21:45:39] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 21:45:39] - Order report is created -> 8204
+[2024-10-03 21:49:04] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 21:49:04] - Order report is created -> 8205
+[2024-10-03 21:49:22] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 21:49:22] - Order report is created -> 8206
+[2024-10-03 21:50:22] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 21:50:22] - Order report is created -> 8207
+[2024-10-03 21:51:23] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-10-2024.csv
+[2024-10-03 21:51:23] - Order report is created -> 8208
+[2024-10-03 21:53:39] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-09-2024.csv
+[2024-10-03 21:53:39] - Order report is created -> 8209
+[2024-10-03 21:59:05] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-September-2024.csv
+[2024-10-03 21:59:05] - Order report is created -> 8210
+[2024-10-03 22:01:17] - CSV generated and saved. Path -> http://localhost/orgotel.com/wp-content/uploads/order-reports/woogst-tax-report-September-2024.csv
+[2024-10-03 22:01:22] - Report email sent
+[2024-10-03 22:01:22] - Order report is created -> 8211

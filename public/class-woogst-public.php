@@ -52,23 +52,28 @@ class Woogst_Public {
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
 
+		
 		/**
 		 * Add gst fields in checkout
 		 * Possible hooks
 		 * 'woocommerce_after_checkout_billing_form'	- default
 		 * 'woocommerce_review_order_before_submit'
 		 */
-		add_action('woocommerce_after_checkout_billing_form', array($this, 'woogst_checkout_gst_fields'));
-            // Remove optional label
-            add_filter('woocommerce_form_field', array($this, 'remove_optional_text_from_gst_fields'), 10, 4);
-            // Sanitise and Validate
-            add_filter('woocommerce_checkout_process', array($this, 'gst_fields_sanitize_and_validate'));
-            // Save in order meta during checkout
-            add_action('woocommerce_checkout_update_order_meta', array($this, 'gst_fields_save_in_order_meta'));
-            // Add GST details (echo) html in email
-            add_action('woocommerce_email_order_meta', array($this, 'gst_fields_add_in_email_display'), 10, 3);
-            // VAT to GST replacement
-            add_filter('gettext', array($this, 'vat_to_gst_replacement'), 20, 3);
+		$settings = woogst_get_options('settings');
+		// var_dump($checkout_enable);
+		if($settings['gst_checkout'] && $settings['enable_gst']) {
+			add_action('woocommerce_after_checkout_billing_form', array($this, 'woogst_checkout_gst_fields'));
+			// Remove optional label
+			add_filter('woocommerce_form_field', array($this, 'remove_optional_text_from_gst_fields'), 10, 4);
+			// Sanitise and Validate
+			add_filter('woocommerce_checkout_process', array($this, 'gst_fields_sanitize_and_validate'));
+			// Save in order meta during checkout
+			add_action('woocommerce_checkout_update_order_meta', array($this, 'gst_fields_save_in_order_meta'));
+			// Add GST details (echo) html in email
+			add_action('woocommerce_email_order_meta', array($this, 'gst_fields_add_in_email_display'), 10, 3);
+			// VAT to GST replacement
+			add_filter('gettext', array($this, 'vat_to_gst_replacement'), 20, 3);
+		}
 
 	}
 

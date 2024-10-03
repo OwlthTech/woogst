@@ -30,7 +30,8 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : $default_tab;
  * @return void
  */
 
-
+$woogst_options = woogst_get_options('settings');
+$enable_gst = isset($woogst_options['enable_gst']) ? $woogst_options['enable_gst'] : 0;
 ?>
 
 
@@ -43,12 +44,15 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : $default_tab;
       <nav class="nav-tab-wrapper">
             <a href="?page=gst-settings" class="nav-tab <?php if ($tab === null): ?>nav-tab-active<?php endif; ?>">Tax
                   settings</a>
+
+            <?php if($enable_gst): ?>
             <a href="?page=gst-settings&tab=gst-reports"
-                  class="nav-tab <?php if ($tab === 'gst-reports'): ?>nav-tab-active<?php endif; ?>">Reports</a>
+                  class="nav-tab <?php if ($tab === 'gst-reports'): ?>nav-tab-active<?php endif; ?>">Reports</a>      
             <a href="?page=gst-settings&tab=gst-slabs"
                   class="nav-tab <?php if ($tab === 'gst-slabs'): ?>nav-tab-active<?php endif; ?>">GST Slabs</a>
             <a href="?page=gst-settings&tab=permissions"
                   class="nav-tab <?php if ($tab === 'permissions'): ?>nav-tab-active<?php endif; ?>">Permissions</a>
+            <?php endif; ?>
             <a href="?page=gst-settings&tab=status"
                   class="nav-tab <?php if ($tab === 'status'): ?>nav-tab-active<?php endif; ?>">Status</a>
       </nav>
@@ -57,13 +61,13 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : $default_tab;
             <div class="wrap">
                   <?php
                   if (!(woogst_validator()->is_woocommerce_active()) && (woogst_validator()->is_woocommerce_installed())) {
-                        echo 'WooGST requires WooCommerce plugin, please activate';
-                        return;
+                        set_wp_admin_notice('WooGST requires WooCommerce plugin, please activate', 'error');
+                        wp_redirect($_SERVER['REQUEST_URI']);
                   }
 
                   if (!(woogst_validator()->is_woocommerce_active()) && !(woogst_validator()->is_woocommerce_installed())) {
-                        echo 'WooGST requires WooCommerce plugin, please install and activate';
-                        return;
+                        set_wp_admin_notice('WooGST requires WooCommerce plugin, please install and activate', 'error');
+                        wp_redirect($_SERVER['REQUEST_URI']);
                   }
                   ?>
                   <?php switch ($tab):

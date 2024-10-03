@@ -55,10 +55,16 @@ class Woogst_Admin
         add_action('wp_ajax_woogst_save_permissions', array($this, 'save_permissions'));
         add_action('wp_ajax_nopriv_woogst_save_permissions', array($this, 'save_permissions'));
 
+        /** Meta box */
+        add_action('add_meta_boxes', array($this, 'woogst_add_meta_box'));
+        add_action('admin_init', array($this, 'woogst_generate_report'));
+
+
         $woo_gst = woogst_gst();
         $woo_gst->init();
 
     }
+
     public function add_settings_link($links)
     {
         $settings_link = '<a href="' . admin_url('admin.php?page=gst-settings') . '">' . __('Settings') . '</a>';
@@ -108,7 +114,7 @@ class Woogst_Admin
      *
      * @since    1.0.0
      */
-    public function enqueue_scripts()
+    public function enqueue_scripts($hook)
     {
 
         /**
@@ -133,10 +139,13 @@ class Woogst_Admin
             wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/woogst-admin.js', array('jquery'), $this->version, false);
         }
         if ($screen_id === 'woocommerce_page_gst-settings' && isset($_GET['tab']) && $_GET['tab'] === 'gst-slabs') {
-            wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/woogst-slabs.js', array('jquery'), $this->version, false);
+            wp_enqueue_script($this->plugin_name . '-slab', plugin_dir_url(__FILE__) . 'js/woogst-slabs.js', array('jquery'), $this->version, false);
         }
         if ($screen_id === 'woocommerce_page_gst-settings' && !isset($_GET['tab'])) {
-            wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/woogst-valid-gst.js', array('jquery'), $this->version, false);
+            wp_enqueue_script($this->plugin_name . '-validate', plugin_dir_url(__FILE__) . 'js/woogst-valid-gst.js', array('jquery'), $this->version, false);
+        }
+        if ($screen->post_type === 'gst-reports') {
+            wp_dequeue_script('autosave');
         }
     }
 
@@ -218,12 +227,10 @@ class Woogst_Admin
         register_post_type('gst-reports', $args);
     }
 
-
-
     public function woogst_menu()
     {
         add_submenu_page(
-            'woocommerce',
+            '/edit.php?post_type=gst-reports',
             'GST Settings',
             'GST Settings',
             'manage_woogst_settings',
@@ -239,11 +246,11 @@ class Woogst_Admin
             return;
         }
 
-        if(!(woogst_validator()->is_woocommerce_active()) && (woogst_validator()->is_woocommerce_installed())) {
+        if (!(woogst_validator()->is_woocommerce_active()) && (woogst_validator()->is_woocommerce_installed())) {
             set_wp_admin_notice('Please activate woocommerce', 'error');
         }
 
-        if(!(woogst_validator()->is_woocommerce_active()) && !(woogst_validator()->is_woocommerce_installed())) {
+        if (!(woogst_validator()->is_woocommerce_active()) && !(woogst_validator()->is_woocommerce_installed())) {
             set_wp_admin_notice('Please install and activate woocommerce', 'error');
         }
 
@@ -269,6 +276,7 @@ class Woogst_Admin
                 case 'settings':
                     // Sanitize and collect the form data
                     $settings = [
+                        'enable_gst' => isset($_POST['enable_gst']) ? 1 : 0,
                         'store_gst_name' => isset($_POST['store_gst_name']) ? $_POST['store_gst_name'] : '',
                         'store_gst_number' => isset($_POST['store_gst_number']) ? $_POST['store_gst_number'] : '',
                         'gst_checkout' => isset($_POST['gst_checkout']) ? 1 : 0,
@@ -386,23 +394,266 @@ class Woogst_Admin
         exit;
     }
 
+    /**
+     * Report edit page metabox
+     */
+    // Add the meta box for displaying report details
+    function woogst_add_meta_box()
+    {
+        $screen = get_current_screen();
+        if ($screen->post_type === 'gst-reports') {
+            if ($screen->action != 'add') {
+                add_meta_box(
+                    'woogst_report_meta_box',    // Unique ID for the meta box
+                    __('GST Report Details', 'woogst'),   // Meta box title
+                    array($this, 'woogst_display_report_meta_box'),  // Callback function
+                    'gst-reports',    // Post type where the meta box will appear
+                    'normal',    // Context (normal, side, etc.)
+                    'default'    // Priority
+                );
+            }
+
+            // Only display the meta box on the "Add New" screen (post-new.php) for gst-reports
+            if ($screen->action === 'add') {
+                add_meta_box(
+                    'woogst_generate_report_meta_box',    // Unique ID for the meta box
+                    __('Generate GST Report', 'woogst'),  // Meta box title
+                    array($this, 'woogst_generate_report_meta_box_callback'),  // Callback function
+                    'gst-reports',    // Post type where the meta box will appear
+                    'normal',    // Context (normal, side, etc.)
+                    'default'    // Priority
+                );
+            }
+        }
+    }
+
+    function woogst_display_report_meta_box($post)
+    {
+        $screen = get_current_screen();
+
+        if ($screen->action != 'add') {
+            echo '<h1>' . get_the_title() . '</h1>';
+            // Get the post meta
+            $woogst_option = get_post_meta($post->ID, 'woogst_report', true);
+
+            // Check if the data exists and unserialize if necessary
+            $report_data = maybe_unserialize($woogst_option);
+
+            if (!empty($report_data)) {
+                // Display report details
+                echo '<p><strong>Report Duration</strong>';
+                echo '<p><strong>From:</strong> ' . esc_html($report_data['from']) . '</p>';
+                echo '<p><strong>To:</strong> ' . esc_html($report_data['to']) . '</p>';
+                echo '<hr>';
+                echo '<p><strong>Report CSV:</strong> <a type="button" class="button-secondary" href="' . esc_url($report_data['report_csv_url']) . '" target="_blank"> Download CSV </a></p>';
+                echo '<hr>';
+                echo '<p><strong>Email status:</strong> ' . esc_html($report_data['sent_email'] == '1' ? __('Sent successfully', 'woogst') : __('No', 'woogst')) . '</p>';
+                echo '<hr>';
+                echo '<p><strong>Order Total:</strong> ' . esc_html($report_data['report_total']) . '</p>';
+
+                // Display Tax Details
+                echo '<h4>' . __('Tax Details', 'woogst') . '</h4>';
+                if (!empty($report_data['report_total_tax'])) {
+                    foreach ($report_data['report_total_tax'] as $tax_type => $tax_details) {
+                        foreach ($tax_details as $rate => $amount) {
+                            echo '<p><strong>' . esc_html($tax_type) . ' (' . esc_html($rate) . '%):</strong> ' . esc_html(number_format($amount, 2)) . '</p>';
+                        }
+                    }
+                } else {
+                    echo '<p>' . __('No tax data available.', 'woogst') . '</p>';
+                }
+
+                // Display Order Details
+                echo '<hr>';
+                echo '<h4>' . __('Order Details', 'woogst') . '</h4>';
+                if (!empty($report_data['report_orders'])) {
+                    echo '<ul>';
+                    foreach ($report_data['report_orders'] as $order) {
+                        echo '<li><strong>Order ID:</strong> ' . esc_html($order['order_id']) . ' | <strong>Total:</strong> ' . esc_html($order['order_total']) . '</li>';
+                    }
+                    echo '</ul>';
+                } else {
+                    echo '<p>' . __('No order data available.', 'woogst') . '</p>';
+                }
+            } else {
+                echo '<p>' . __('No report data available.', 'woogst') . '</p>';
+            }
+        }
+
+        echo '<style type="text/css">
+                #titlediv {
+                    display: none;
+                }
+                .page-title-action {
+                    display: none !important;
+                }
+              </style>';
+    }
+
+
+    // Callback function to display the meta box content
+    function woogst_generate_report_meta_box_callback($post)
+    {
+        // Get the current month and year for default selection
+        $current_month = date('m');
+        $current_year = date('Y');
+
+        // Prepare month and year options
+        $months = [
+            '01' => 'January',
+            '02' => 'February',
+            '03' => 'March',
+            '04' => 'April',
+            '05' => 'May',
+            '06' => 'June',
+            '07' => 'July',
+            '08' => 'August',
+            '09' => 'September',
+            '10' => 'October',
+            '11' => 'November',
+            '12' => 'December'
+        ];
+
+        $years = range($current_year, 2017);
+        ?>
+        <form class="woogst-report-generation" method="post" action="">
+            <p><strong><?php _e('Select Month and Year to Generate Report', 'woogst'); ?></strong></p>
+
+            <p>
+                <label for="woogst_report_month"><?php _e('Month:', 'woogst'); ?></label>
+                <select id="woogst_report_month" name="woogst_report_month">
+                    <?php foreach ($months as $month_value => $month_name): ?>
+                        <option value="<?php echo esc_attr($month_value); ?>" <?php selected($current_month, $month_value); ?>>
+                            <?php echo esc_html($month_name); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </p>
+
+            <p>
+                <label for="woogst_report_year"><?php _e('Year:', 'woogst'); ?></label>
+                <select id="woogst_report_year" name="woogst_report_year">
+                    <?php foreach ($years as $year): ?>
+                        <option value="<?php echo esc_attr($year); ?>" <?php selected($current_year, $year); ?>>
+                            <?php echo esc_html($year); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </p>
+
+            <p>
+                <label for="woogst_send_report_email">
+                    <input type="checkbox" id="woogst_send_report_email" name="woogst_send_report_email" value="yes">
+                    <?php _e('Send report to admin email', 'woogst'); ?>
+                </label>
+            </p>
+
+            <!-- Add hidden field to store post ID -->
+            <input type="hidden" name="woogst_report_post_id" value="<?php echo esc_attr($post->ID); ?>">
+
+            <p>
+                <button type="submit" class="button button-primary">
+                    <?php _e('Generate Report', 'woogst'); ?>
+                </button>
+            </p>
+
+            <!-- Include a nonce field for security -->
+            <?php wp_nonce_field('woogst_generate_report_nonce', 'woogst_report_nonce'); ?>
+        </form>
+
+        <?php
+        echo '<style type="text/css">
+            #titlediv {
+                display: none;
+            }
+            .page-title-action {
+                display: none !important;
+            }
+        </style>';
+    }
+
+    function woogst_generate_report()
+    {
+        // Check the nonce for security
+        if (isset($_POST['woogst_report_nonce']) && wp_verify_nonce($_POST['woogst_report_nonce'], 'woogst_generate_report_nonce')) {
+
+            // Sanitize and validate the input data
+            $post_id = isset($_POST['woogst_report_post_id']) ? absint($_POST['woogst_report_post_id']) : 0;
+            $month = isset($_POST['woogst_report_month']) ? sanitize_text_field($_POST['woogst_report_month']) : '';
+            $year = isset($_POST['woogst_report_year']) ? sanitize_text_field($_POST['woogst_report_year']) : '';
+            $send_report_email = isset($_POST['woogst_send_report_email']) && $_POST['woogst_send_report_email'] === 'yes';
+
+
+            // Check if the required data is present
+            if (empty($post_id) || empty($month) || empty($year)) {
+                set_wp_admin_notice(__('Please select a valid month, year, and post.', 'woogst'), 'error');
+                wp_redirect($_SERVER['REQUEST_URI']);
+                exit;
+            }
+
+            // If post_id is provided, update the post directly
+            $update_post_data = array(
+                'ID' => $post_id,
+                'post_title' => '',
+                'post_content' => ''
+            );
+            wp_update_post($update_post_data);
+
+            // Generate and save the report
+            $generated_report = woogst_report()->generate_save_and_send_report($month, $year, $post_id, false, $send_report_email);
+
+            if ($generated_report) {
+                set_wp_admin_notice("Report generated successfully", 'success');
+                wp_redirect(admin_url('post.php?post=' . $post_id) . '&action=edit');
+                exit;
+            } else {
+                set_wp_admin_notice("Report generation failed", 'error');
+            }
+        }
+    }
+
 
 }
 
 
+/**
+ * Meta box for report generation
+ */
 
+
+/**
+ * Gets options
+ * @param mixed $tab
+ * @return array
+ */
 function woogst_get_options($tab)
 {
     // Get the existing settings for 'woogst_settings'
-    $gst_settings = get_option(WOOGST_OPTION_PREFIX . $tab, []);
+    $woogst_settings = get_option(WOOGST_OPTION_PREFIX . $tab, []);
 
     // Ensure it's an array and update the gst_tax_rates within the settings
-    if (!is_array($gst_settings)) {
+    if (!is_array($woogst_settings)) {
         set_wp_admin_notice('option ' . WOOGST_OPTION_PREFIX . $tab . ' is not an array', 'error');
-        wp_redirect(get_admin_url(null, '/admin.php?page=gst-settings'));
+        wp_redirect($_SERVER['REQUEST_URI']);
         exit;
     }
-    return $gst_settings;
+    return $woogst_settings;
+}
+
+
+function woogst_get_option_key($tab, $key)
+{
+    if (!isset($key)) {
+        wp_die('Please specify the key to retrieve', 'error');
+    }
+    // Get the existing settings for 'woogst_settings'
+    $woogst_settings = get_option(WOOGST_OPTION_PREFIX . $tab, []);
+    $value_for_key = $woogst_settings[$key];
+    // Ensure it's an array and update the gst_tax_rates within the settings
+    if (!isset($value_for_key)) {
+        wp_die('Error retrieving option: ' . $tab . ' key: ' . $key . ' --- Found: ' . $value_for_key, 'error');
+    }
+    return $value_for_key;
 }
 
 /**
@@ -449,7 +700,6 @@ function woogst_create_gst_tax_class()
 
     wp_send_json_success(['message' => 'Tax rates successfully created for ' . $gst_class]);
 }
-
 
 
 function woogst_create_gst_tax_rates($gst_class, $input_tax_rate)

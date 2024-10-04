@@ -33,6 +33,7 @@ class Woogst_Deactivator
 	public static function deactivate()
 	{
 		wp_clear_scheduled_hook('woogst_send_monthly_tax_report');
+		self::woogst_remove_admin_capabilities();
 	}
 
 	public static function woogst_remove_admin_capabilities()

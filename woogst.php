@@ -1,13 +1,6 @@
 <?php
 
 /**
- * The plugin bootstrap file
- *
- * This file is read by WordPress to generate the plugin information in the plugin
- * admin area. This file also includes all of the dependencies used by the plugin,
- * registers the activation and deactivation functions, and defines a function
- * that starts the plugin.
- *
  * @link              https://owlth.tech
  * @since             1.0.0
  * @package           Woogst
@@ -15,9 +8,14 @@
  * @wordpress-plugin
  * Plugin Name:       WooGST
  * Plugin URI:        https://owlth.tech
- * Description:       WooCommerce GST Plugin
+ * Description:       A WooCommerce extension for managing and calculating GST (Goods and Services Tax) for orders in India. It adds GST fields to checkout and handles GST validation and report generation.
  * Version:           1.0.0
- * Requires Plugins: 
+ * Requires Plugins:  woocommerce
+ * WC requires at least: 9.0
+ * WC tested up to: 9.0
+ * Requires at least: 6.6
+ * Tested up to:      6.6
+ * Requires PHP:      8.0
  * Author:            Owlth Tech
  * Author URI:        https://owlth.tech/
  * License:           GPL-2.0+
@@ -25,6 +23,7 @@
  * Text Domain:       woogst
  * Domain Path:       /languages
  */
+
 
 // If this file is called directly, abort.
 if (!defined('WPINC')) {

@@ -3,13 +3,13 @@
 function gst_report_tab_content($tab)
 {
       // Retrieve saved settings from the single option key
-      $settings = woogst_get_options($tab);
+      $settings = woogst_get_option($tab);
 
       // Report settings
-      $schedule_report = isset($settings['schedule_report']) ? $settings['schedule_report'] : 0;
-      $schedule_report_email = isset($settings['schedule_report_email']) ? $settings['schedule_report_email'] : 0;
-      $schedule_report_email_id = isset($settings['schedule_report_email_id']) ? $settings['schedule_report_email_id'] : '';
-      $schedule_report_private = isset($settings['schedule_report_private']) ? $settings['schedule_report_private'] : 0;
+      $schedule_report = $settings['schedule_report'];
+      $schedule_report_email = $settings['schedule_report_email'];
+      $schedule_report_email_id = $settings['schedule_report_email_id'];
+      $schedule_report_private = $settings['schedule_report_private'];
 
       ?>
 
@@ -32,7 +32,7 @@ function gst_report_tab_content($tab)
                                           set in
                                           Settings > General) of first day of each month for previous month orders.</p>
 
-                                    <fieldset data-id="schedule_report">
+                                    <fieldset data-id="schedule_report" class="<?php echo $schedule_report ? '' : 'disabled-row'; ?>">
                                           <legend class="screen-reader-text"><span>Monthly GST Report Generation</span>
                                           </legend>
                                           <br>

@@ -1,5 +1,17 @@
 jQuery(document).ready(function ($) {
 
+    function toggleBillingCountryFields() {
+        var billingCountry = $('#billing_country').val(); // Get the selected country
+        if (billingCountry === 'IN') {
+            $('#billing_gst_fields').slideDown(); // Show GST section if the country is India
+        } else {
+            $('#billing_gst_fields').slideUp();   // Hide GST section if the country is not India
+            $('#gst_fields').slideUp();           // Also hide GST name and number fields
+            $('#gst_fields').find("input,textarea").prop("disabled", true);
+            $('#billing_claim_gst').prop('checked', false); // Uncheck GST checkbox
+        }
+    }
+
     $('#billing_claim_gst').attr('checked', false);
     $('#billing_claim_gst').attr('value', 0);
     // Function to toggle GST fields based on checkbox state
@@ -19,8 +31,14 @@ jQuery(document).ready(function ($) {
         }
     }
 
-    // Initially set the visibility based on the checkbox state
+    // Initially set the visibility based on the checkbox and country
+    toggleBillingCountryFields();
     toggleGstFields();
+
+    // Toggle visibility based on billing country change event
+    $(document).on('change', '#billing_country', function () {
+        toggleBillingCountryFields();
+    });
 
     // Toggle visibility based on checkbox change event
     $(document).on('change', '#billing_claim_gst', function () {
@@ -28,20 +46,22 @@ jQuery(document).ready(function ($) {
     });
 
     $(document.body).on('updated_checkout', function () {
+        toggleBillingCountryFields();
         toggleGstFields();
     });
 
 
     var gstPattern = /^[0-9]{2}[A-Z]{3}[ABCFGHLJPTF]{1}[A-Z]{1}[0-9]{4}[A-Z]{1}[1-9]{1}Z[0-9A-Z]{1}$/;
 
-    // Ensure the input is always in uppercase
-    $('#billing_gst_number').on('input', function () {
+    // Ensure the input is always in uppercase using delegated event
+    $(document).on('input', '#billing_gst_number', function () {
         var gstNumber = $(this);
         var upperCaseValue = gstNumber.val().toUpperCase();
         gstNumber.val(upperCaseValue);
     });
 
-    $('#billing_gst_number').on('blur', function () {
+    // Validate GST Number on blur using delegated event
+    $(document).on('blur', '#billing_gst_number', function () {
         var gstNumber = $(this);
         var gstValue = gstNumber.val();
         var clainCheck = $('#billing_claim_gst').is(':checked');
@@ -60,8 +80,8 @@ jQuery(document).ready(function ($) {
         }
     });
 
-    // billing_gst_holder_name
-    $('#billing_gst_holder_name').on('blur', function () {
+    // Validate GST Holder Name on blur using delegated event
+    $(document).on('blur', '#billing_gst_holder_name', function () {
         var gstName = $(this);
         var gstNameValue = gstName.val();
         var clainCheck = $('#billing_claim_gst').is(':checked');
@@ -74,7 +94,7 @@ jQuery(document).ready(function ($) {
                 gstName.after('<span class="woocommerce-invalid-feedback" style="color:red;">Please enter GSTIN holder name.</span>');
             }
         } else {
-            // Valid GST Number
+            // Valid GST Name
             gstName.closest('.form-row').removeClass('woocommerce-invalid').addClass('woocommerce-validated');
             gstName.next('.woocommerce-invalid-feedback').remove();
         }

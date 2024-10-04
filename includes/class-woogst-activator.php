@@ -32,7 +32,10 @@ class Woogst_Activator
 	 */
 	public static function activate()
 	{
-		woogst_report()->schedule_report();
+		// Checks and schedules action if enabled
+		woogst_report()->handle_scheduled_report_action();
+		
+		self::woogst_add_admin_capabilities();
 	}
 
 	public static function woogst_add_admin_capabilities()
@@ -54,7 +57,7 @@ class Woogst_Activator
 			$admin_role->add_cap('edit_published_gst_reports');
 			$admin_role->add_cap('edit_others_gst_reports');
 
-			//     Publish
+			// Publish
 			$admin_role->add_cap('publish_gst_reports');
 
 			// Delete
@@ -70,6 +73,6 @@ class Woogst_Activator
 // Class
 
 // Rate for class
-$rate = WC_Tax::get_rates('GST');
-$rates_for_tax_class = WC_Tax::get_rates_for_tax_class('GST');
+// $rate = WC_Tax::get_rates('GST');
+// $rates_for_tax_class = WC_Tax::get_rates_for_tax_class('GST');
 

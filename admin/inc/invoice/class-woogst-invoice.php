@@ -26,8 +26,11 @@ class Woogst_Invoice
 
     public function init()
     {
-        add_filter('woocommerce_admin_order_actions', array($this, 'add_invoice_action_order_list_table'), 100, 2);
-        add_action( 'wp_ajax_owlth_print_invoice', array($this, 'handle_print_invoice') );
+        $gst_invoice_enable = woogst_get_option('gst-invoice', 'gst_invoice_enable');
+        if($gst_invoice_enable) {
+            add_filter('woocommerce_admin_order_actions', array($this, 'add_invoice_action_order_list_table'), 100, 2);
+            add_action( 'wp_ajax_owlth_print_invoice', array($this, 'handle_print_invoice') );
+        }
     }
 
     /**

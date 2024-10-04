@@ -131,8 +131,21 @@ class Woogst_Report_Table
       public function woogst_gst_reports_row_actions($actions, $post)
       {
             if ($post->post_type == 'gst-reports') {
+                  unset($actions['inline hide-if-no-js']);
+                  if ($actions['edit']) {
+                        $actions['edit'] = '<a href="' . get_edit_post_link($post->ID) . '">' . __('View Report', 'woogst') . '</a>';
+                  }
                   // Add custom action links
-                  $actions['send_email'] = '<a href="' . admin_url('admin-post.php?action=send_gst_report_email&post_id=' . $post->ID) . '">' . __('Send Email', 'woogst') . '</a>';
+                  // $actions['send_email'] = '<a href="' . admin_url('admin-post.php?action=send_gst_report_email&post_id=' . $post->ID) . '">' . __('Send in Email', 'woogst') . '</a>';
+                  // if (isset($actions['trash'])) {
+                  //       $trash_action = $actions['trash'];
+                  //       unset($actions['trash']); // Remove "trash" temporarily
+                  // }
+
+                  // Append the "trash" action back to the end of the actions array
+                  if (isset($trash_action)) {
+                        $actions['trash'] = $trash_action;
+                  }
             }
             return $actions;
       }
@@ -151,21 +164,15 @@ class Woogst_Report_Table
       public function woogst_gst_report_actions_column_data($post_id, $woogst_option)
       {
 
-            $regenerate = woogst_validator()->is_woocommerce_active() ? sprintf(
-                  '<a href="%s">%s</a><br/>',
-                  esc_url(add_query_arg(['post_id' => $post_id, 'action' => 'regenerate_report'], admin_url('admin-post.php'))),
-                  __('Regenerate Report', 'woogst')
-            ) : '';
-
             // Get email status and set action link
             $email_status = isset($woogst_option['sent_email']) ? $woogst_option['sent_email'] : 0;
             $email_status_text = $email_status ? __('Resend Email', 'woogst') : __('Send Email', 'woogst');
 
-            $send_email = sprintf(
-                  '<a href="%s">%s</a><br/>',
-                  esc_url(add_query_arg(['post_id' => $post_id, 'action' => 'send_gst_report_email'], admin_url('admin-post.php'))),
-                  $email_status_text
-            );
+            // $send_email = sprintf(
+            //       '<a href="%s">%s</a><br/>',
+            //       esc_url(add_query_arg(['post_id' => $post_id, 'action' => 'send_gst_report_email'], admin_url('admin-post.php'))),
+            //       $email_status_text
+            // );
 
             // Download Report Link
             $download_url = isset($woogst_option['report_csv_url']) ? $woogst_option['report_csv_url'] : '';
@@ -176,7 +183,7 @@ class Woogst_Report_Table
             ) : __('No CSV available', 'woogst');
 
             // Combine actions
-            $actions = "{$regenerate}{$send_email}{$download_report}";
+            $actions = "{$download_report}";
             return $actions;
       }
 

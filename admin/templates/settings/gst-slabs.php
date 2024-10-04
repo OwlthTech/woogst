@@ -4,9 +4,9 @@
 function gst_slabs_tab_content($tab)
 {
       // Retrieve saved settings from the single option key
-      $settings = woogst_get_options($tab);
+      $settings = woogst_get_option($tab);
 
-      $saved_gst_tax_classes = isset($settings['gst_tax_class']) ? $settings['gst_tax_class'] : [];
+      $saved_gst_tax_classes = $settings['gst_tax_class'];
 
       $gst_tax_classes = array(
             array(
@@ -39,6 +39,9 @@ function gst_slabs_tab_content($tab)
             <input type="hidden" name="woogst_form_submitted" value="yes">
             <table class="form-table">
                   <tbody>
+                        
+                        <?php if(WC()->countries->get_base_country() == 'IN' && WC()->countries->get_base_state() != ''): ?>
+
                         <!-- WooCommerce GST Classes -->
                         <tr>
                               <th scope="row">GST tax slabs</th>
@@ -98,6 +101,19 @@ function gst_slabs_tab_content($tab)
                                     
                               </td>
                         </tr>
+
+                        <?php elseif(WC()->countries->get_base_country() != 'IN'): ?>
+                              <hr>
+                              <p><b>Your store country is not set to India. GST is applicable for India only.</b></p>
+                              <p><b>Store country: </b><?php echo WC()->countries->get_base_country(); ?></p>
+                              <hr>
+                        <?php elseif(WC()->countries->get_base_state() == ''): ?>      
+                              <hr>
+                              <p><b>Store country: </b><?php echo WC()->countries->get_base_country(); ?></p>
+                              <p><b>Store state: </b><i>none</i></p>
+                              <hr>
+                        <?php endif; ?>
+
                   </tbody>
             </table>
             <p class="description">Select the gst slabs you wants to enable for your store and reports and save.</p>

@@ -50,7 +50,7 @@ class Woogst_Report
     public function handle_scheduled_report_action()
     {
         // Check if the report generation is enabled in the plugin settings
-        $schedule_report_enabled = woogst_get_option_key('gst-reports', 'schedule_report');
+        $schedule_report_enabled = woogst_get_option('gst-reports', 'schedule_report');
 
         // If the report is enabled and not already scheduled
         if (isset($schedule_report_enabled) && $schedule_report_enabled) {
@@ -67,8 +67,6 @@ class Woogst_Report
             }
         }
     }
-
-
 
     public function schedule_report()
     {
@@ -90,16 +88,14 @@ class Woogst_Report
         }
     }
 
-
-
-    public function generate_save_and_send_report($month = null, $year = null, $report_id = null, $schedule = true, $send_report_email = true)
+    public function generate_save_and_send_report($month = null, $year = null, $report_id = null, $schedule = true, $send_report_email = true, $to_additional_email = true)
     {
         // If no month and year are passed, use the previous month and current year as default
         if (is_null($month) && is_null($year)) {
             $prev = new DateTime('first day of last month');
             $suffix = $prev->format('m-Y');
         }
-        if(!is_null($month) && !is_null($year)) {
+        if (!is_null($month) && !is_null($year)) {
             if (is_numeric($month)) {
                 $month = DateTime::createFromFormat('!m', $month)->format('F');
             }
@@ -109,12 +105,14 @@ class Woogst_Report
 
         $orders = get_monthly_orders($month, $year);
 
-        // Do actions
+        // Do actions - get orders, generate csv, format email
+        $report_csv = generate_csv($orders['order_data'], $month, $year);
         $order_stats = get_order_statistics($orders);
-        $report_csv = generate_csv($orders['order_data'],$month, $year);
         $email_body = format_statistics_for_email($order_stats);
-        if($send_report_email) {
-            $email_status = send_schedule_report_mail($title, $email_body, $report_csv['file_path']);
+
+        // if checked in generation form or scheduled then send email
+        if (!$schedule || !$send_report_email) {
+            $email_status = send_report_mail($title, $email_body, $report_csv['file_path'], $to_additional_email);
         }
         // Extract order IDs and other relevant details from order data for storage
         $simplified_order_data = array_map(function ($order) {
@@ -144,7 +142,6 @@ class Woogst_Report
             'post_status' => 'private',
             'meta_input' => $report_meta,
         );
-        error_log('post title-> '. 'Order Report for ' . date('F Y'));
 
         if (!is_null($report_id)) {
             $post_data['ID'] = $report_id;
@@ -157,7 +154,7 @@ class Woogst_Report
         $timezone = new DateTimeZone(wp_timezone_string());
         $next_schedule = new DateTime('first day of next month 08:00', $timezone);
         $next_schedule_timestamp = $next_schedule->getTimestamp();
-        if($schedule) {
+        if ($schedule) {
             wp_schedule_single_event($next_schedule_timestamp, 'woogst_send_monthly_tax_report');
         }
         return true;
@@ -166,197 +163,6 @@ class Woogst_Report
 
 /**
  * Main actions of schedule reporting
- */
-
-if (!function_exists('get_order_statistics')) {
-    function get_order_statistics($order_data)
-    {
-        // Variables to hold statistics
-        $total_order_amount = 0;
-        $total_tax_amount_by_label = array();
-
-        // Loop through the orders to gather statistics
-        foreach ($order_data['order_data'] as $order) {
-            // Add up total order amount
-            $total_order_amount += $order['order_total'];
-
-            // Loop through tax classes for each order to gather tax details
-            foreach ($order['tax_classes'] as $tax_class) {
-                $label = $tax_class['label'];   // Tax label (e.g., VAT, GST)
-                $rate = $tax_class['rate'];     // Tax rate (e.g., 5%, 18%)
-                $tax_amount = $tax_class['amount']; // Tax amount for this rate
-
-                // Group tax by label and rate
-                if (!isset($total_tax_amount_by_label[$label])) {
-                    $total_tax_amount_by_label[$label] = array();
-                }
-
-                if (!isset($total_tax_amount_by_label[$label][$rate])) {
-                    $total_tax_amount_by_label[$label][$rate] = 0;
-                }
-
-                // Add tax amount to the total for this label and rate
-                $total_tax_amount_by_label[$label][$rate] += $tax_amount;
-            }
-        }
-
-        // Return statistics as an array
-        return array(
-            'total_order_amount' => $total_order_amount,
-            'total_tax_amount_by_label' => $total_tax_amount_by_label
-        );
-    }
-}
-
-if (!function_exists('generate_csv')) {
-    function generate_csv($orders_data, $month = null, $year = null)
-    {
-        // If no month and year are passed, use the previous month and current year as default
-        if (is_null($month) && is_null($year)) {
-            $prev = new DateTime('first day of last month');
-            $suffix = $prev->format('m-Y');
-        }
-        if(!is_null($month) && !is_null($year)) {
-            $suffix = "{$month}-{$year}";
-        }
-
-        // Set the file name based on the passed or default month and year
-        $file_name = "woogst-tax-report-{$suffix}.csv";
-        error_log("FIle name:".$file_name);
-        $reports_directory = get_report_directory();
-        $csv_file_path = "{$reports_directory}{$file_name}";
-        // Open file for writing
-        $file = fopen($csv_file_path, 'w');
-        if ($file === false) {
-            return false; // Handle error if file opening fails
-        }
-
-        // Add CSV headers
-        fputcsv($file, array('Order ID', 'Billing GST Number', 'Billing GST Trade Name', 'Order Total', 'Tax Total', 'Order Date', 'Tax Label', 'Tax rate', 'Tax amount'));
-        // Add rows to the CSV
-        foreach ($orders_data as $order) {
-            // Check if the order has any tax classes
-            if (!empty($order['tax_classes'])) {
-                // Loop through each tax class for the order
-                foreach ($order['tax_classes'] as $tax_class) {
-                    fputcsv($file, array(
-                        $order['order_id'],
-                        $order['billing_gst_number'],
-                        $order['billing_gst_trade_name'],
-                        $order['order_total'],
-                        $order['tax_total'],
-                        $order['order_date'],
-                        $tax_class['label'],  // Tax label (e.g., GST, VAT)
-                        $tax_class['rate'],   // Tax percentage
-                        $tax_class['amount']  // Tax amount
-                    ));
-                }
-            } else {
-                // If no tax classes, add a row with empty tax details
-                fputcsv($file, array(
-                    $order['order_id'],
-                    $order['billing_gst_number'],
-                    $order['billing_gst_trade_name'],
-                    $order['order_total'],
-                    $order['tax_total'],
-                    $order['order_date'],
-                    '',  // Empty tax label
-                    '',  // Empty tax rate
-                    ''   // Empty tax amount
-                ));
-            }
-        }
-
-
-        // Close the file
-        fclose($file);
-
-        // Create the public URL for the CSV file
-        $upload_dir = wp_upload_dir();
-        $csv_file_url = $upload_dir['baseurl'] . '/order-reports/' . $file_name;
-
-        log_report_status("CSV generated and saved. Path -> $csv_file_url");
-        return array(
-            'file_path' => $csv_file_path,  // Local file path for attachment
-            'file_url' => $csv_file_url     // Public URL for download
-        );
-    }
-}
-
-if (!function_exists('format_statistics_for_email')) {
-    function format_statistics_for_email($statistics)
-    {
-        // Extract statistics from the array
-        $total_order_amount = wc_price($statistics['total_order_amount']); // Format as currency
-        $total_tax_amount_by_label = $statistics['total_tax_amount_by_label'];
-
-        // Start building the email content
-        $email_body = "<h2>Monthly Order & Tax Statistics</h2>";
-        $email_body .= "<p>Here are the statistics of the order and taxes:</p>";
-
-        // Start table
-        $email_body .= "<table border='1' cellpadding='5' cellspacing='0' style='border-collapse: collapse; width: 80%;'>
-                        <thead style='background-color: #dfdfdf'>
-                            <tr>
-                                <th>Statistic</th>
-                                <th>Value</th>
-                            </tr>
-                        </thead>
-                        <tbody>";
-
-        // Add total order amount
-        $email_body .= "<tr>
-                        <td><strong>Total Order Amount</strong></td>
-                        <td>$total_order_amount</td>
-                    </tr>";
-
-        // Add tax summary by label and rate
-        foreach ($total_tax_amount_by_label as $label => $rates) {
-            foreach ($rates as $rate => $tax_amount) {
-                $tax_amount_formatted = wc_price($tax_amount); // Format tax amount
-                $email_body .= "<tr>
-                                <td><strong>$label ($rate%)</strong></td>
-                                <td>$tax_amount_formatted</td>
-                            </tr>";
-            }
-        }
-
-        // Close the table
-        $email_body .= "</tbody></table>";
-
-        return $email_body;
-    }
-
-}
-
-if (!function_exists('send_schedule_report_mail')) {
-    function send_schedule_report_mail($title, $email_body, $report_csv)
-    {
-        $woogst_report_settings = woogst_get_options('gst-reports');
-
-        if (isset($woogst_report_settings['schedule_report_email']) && isset($woogst_report_settings['schedule_report_email_id']) && $woogst_report_settings['schedule_report_email_id'] != '') {
-            $to = $woogst_report_settings['schedule_report_email_id'];
-        }
-        if (isset($woogst_report_settings['schedule_report_email']) && isset($woogst_report_settings['schedule_report_email_id']) && $woogst_report_settings['schedule_report_email_id'] == '') {
-            $to = get_bloginfo('admin_email');
-        }
-        $subject = get_bloginfo('name') . ' - ' . $title;
-        $headers = array('Content-Type: text/html; charset=UTF-8');
-        $attachments = array($report_csv);
-        $sent = wp_mail($to, $subject, $email_body, $headers, $attachments);
-
-        if ($sent) {
-            log_report_status('Report email sent');
-            return true;
-        } else {
-            log_report_status('Report email failed');
-            return false;
-        }
-    }
-}
-
-/**
- * Helper functions
  */
 
 if (!function_exists('get_monthly_orders')) {
@@ -385,7 +191,6 @@ if (!function_exists('get_monthly_orders')) {
             $last_day_of_month = new DateTime($first_day_of_month->format('Y-m-t'));
         } catch (Exception $e) {
             // Handle any errors in date creation
-            error_log('Error creating date: ' . $e->getMessage());
             return null;
         }
 
@@ -457,6 +262,201 @@ if (!function_exists('get_monthly_orders')) {
         );
     }
 }
+
+if (!function_exists('generate_csv')) {
+    function generate_csv($orders_data, $month = null, $year = null)
+    {
+        // If no month and year are passed, use the previous month and current year as default
+        if (is_null($month) && is_null($year)) {
+            $prev = new DateTime('first day of last month');
+            $suffix = $prev->format('m-Y');
+        }
+        if (!is_null($month) && !is_null($year)) {
+            $suffix = "{$month}-{$year}";
+        }
+
+        // Set the file name based on the passed or default month and year
+        $file_name = "woogst-tax-report-{$suffix}.csv";
+        $reports_directory = get_report_directory();
+        $csv_file_path = "{$reports_directory}{$file_name}";
+        // Open file for writing
+        $file = fopen($csv_file_path, 'w');
+        if ($file === false) {
+            return false; // Handle error if file opening fails
+        }
+
+        // Add CSV headers
+        fputcsv($file, array('Order ID', 'Billing GST Number', 'Billing GST Trade Name', 'Order Total', 'Tax Total', 'Order Date', 'Tax Label', 'Tax rate', 'Tax amount'));
+        // Add rows to the CSV
+        foreach ($orders_data as $order) {
+            // Check if the order has any tax classes
+            if (!empty($order['tax_classes'])) {
+                // Loop through each tax class for the order
+                foreach ($order['tax_classes'] as $tax_class) {
+                    fputcsv($file, array(
+                        $order['order_id'],
+                        $order['billing_gst_number'],
+                        $order['billing_gst_trade_name'],
+                        $order['order_total'],
+                        $order['tax_total'],
+                        $order['order_date'],
+                        $tax_class['label'],  // Tax label (e.g., GST, VAT)
+                        $tax_class['rate'],   // Tax percentage
+                        $tax_class['amount']  // Tax amount
+                    ));
+                }
+            } else {
+                // If no tax classes, add a row with empty tax details
+                fputcsv($file, array(
+                    $order['order_id'],
+                    $order['billing_gst_number'],
+                    $order['billing_gst_trade_name'],
+                    $order['order_total'],
+                    $order['tax_total'],
+                    $order['order_date'],
+                    '',  // Empty tax label
+                    '',  // Empty tax rate
+                    ''   // Empty tax amount
+                ));
+            }
+        }
+
+
+        // Close the file
+        fclose($file);
+
+        // Create the public URL for the CSV file
+        $upload_dir = wp_upload_dir();
+        $csv_file_url = $upload_dir['baseurl'] . '/order-reports/' . $file_name;
+
+        log_report_status("CSV generated and saved. Path -> $csv_file_url");
+        return array(
+            'file_path' => $csv_file_path,  // Local file path for attachment
+            'file_url' => $csv_file_url     // Public URL for download
+        );
+    }
+}
+
+if (!function_exists('get_order_statistics')) {
+    function get_order_statistics($order_data)
+    {
+        // Variables to hold statistics
+        $total_order_amount = 0;
+        $total_tax_amount_by_label = array();
+
+        // Loop through the orders to gather statistics
+        foreach ($order_data['order_data'] as $order) {
+            // Add up total order amount
+            $total_order_amount += $order['order_total'];
+
+            // Loop through tax classes for each order to gather tax details
+            foreach ($order['tax_classes'] as $tax_class) {
+                $label = $tax_class['label'];   // Tax label (e.g., VAT, GST)
+                $rate = $tax_class['rate'];     // Tax rate (e.g., 5%, 18%)
+                $tax_amount = $tax_class['amount']; // Tax amount for this rate
+
+                // Group tax by label and rate
+                if (!isset($total_tax_amount_by_label[$label])) {
+                    $total_tax_amount_by_label[$label] = array();
+                }
+
+                if (!isset($total_tax_amount_by_label[$label][$rate])) {
+                    $total_tax_amount_by_label[$label][$rate] = 0;
+                }
+
+                // Add tax amount to the total for this label and rate
+                $total_tax_amount_by_label[$label][$rate] += $tax_amount;
+            }
+        }
+
+        // Return statistics as an array
+        return array(
+            'total_order_amount' => $total_order_amount,
+            'total_tax_amount_by_label' => $total_tax_amount_by_label
+        );
+    }
+}
+
+if (!function_exists('format_statistics_for_email')) {
+    function format_statistics_for_email($statistics)
+    {
+        // Extract statistics from the array
+        $total_order_amount = wc_price($statistics['total_order_amount']); // Format as currency
+        $total_tax_amount_by_label = $statistics['total_tax_amount_by_label'];
+
+        // Start building the email content
+        $email_body = "<h2>Monthly Order & Tax Statistics</h2>";
+        $email_body .= "<p>Here are the statistics of the order and taxes:</p>";
+
+        // Start table
+        $email_body .= "<table border='1' cellpadding='5' cellspacing='0' style='border-collapse: collapse; width: 80%;'>
+                        <thead style='background-color: #dfdfdf'>
+                            <tr>
+                                <th>Statistic</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>";
+
+        // Add total order amount
+        $email_body .= "<tr>
+                        <td><strong>Total Order Amount</strong></td>
+                        <td>$total_order_amount</td>
+                    </tr>";
+
+        // Add tax summary by label and rate
+        foreach ($total_tax_amount_by_label as $label => $rates) {
+            foreach ($rates as $rate => $tax_amount) {
+                $tax_amount_formatted = wc_price($tax_amount); // Format tax amount
+                $email_body .= "<tr>
+                                <td><strong>$label ($rate%)</strong></td>
+                                <td>$tax_amount_formatted</td>
+                            </tr>";
+            }
+        }
+
+        // Close the table
+        $email_body .= "</tbody></table>";
+
+        return $email_body;
+    }
+
+}
+
+if (!function_exists('send_report_mail')) {
+    function send_report_mail($title, $email_body, $report_csv, $to_additional_email)
+    {
+        // Prepare
+        $subject = get_bloginfo('name') . ' - ' . $title;
+        $headers = array('Content-Type: text/html; charset=UTF-8');
+        $attachments = array($report_csv);
+        $admin_email = get_bloginfo('admin_email');
+        // Send
+        $sent_admin = wp_mail($admin_email, $subject, $email_body, $headers, $attachments);
+        // Log
+        if ($sent_admin) {
+            log_report_status('Report email sent to admin');
+        }
+
+        // Additional email
+        $additional_email = woogst_get_option('gst-reports', 'schedule_report_email_id');
+        if (is_email($additional_email) && !empty($additional_email) && $to_additional_email) {
+            $sent_additional = wp_mail($additional_email, $subject, $email_body, $headers, $attachments);
+            if ($sent_additional) {
+                log_report_status('Report email sent to additional email id :' . $additional_email);
+            }
+        }
+
+        if ($sent_admin) {
+            return true;
+        }
+    }
+}
+
+/**
+ * Helper functions
+ */
+
 
 if (!function_exists('get_report_directory')) {
     function get_report_directory()

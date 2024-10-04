@@ -37,7 +37,7 @@
   - [class-woogst-i18n.php](#class-woogst-i18n_php)
   - [class-woogst-loader.php](#class-woogst-loader_php)
   - [class-woogst.php](#class-woogst_php)
-  - [index.php](#index_php)
+  - [index.php](#index_php) 
 ### languages/
   - [woogst.pot](#woogst_pot)
 ### public/

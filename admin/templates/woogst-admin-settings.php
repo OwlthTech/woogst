@@ -15,6 +15,7 @@
 require_once plugin_dir_path(dirname(__FILE__)) . 'templates/settings/tax-settings.php';
 require_once plugin_dir_path(dirname(__FILE__)) . 'templates/settings/gst-slabs.php';
 require_once plugin_dir_path(dirname(__FILE__)) . 'templates/settings/gst-reports.php';
+require_once plugin_dir_path(dirname(__FILE__)) . 'templates/settings/gst-invoice.php';
 require_once plugin_dir_path(dirname(__FILE__)) . 'templates/settings/permissions.php';
 ?>
 
@@ -30,30 +31,35 @@ $tab = isset($_GET['tab']) ? $_GET['tab'] : $default_tab;
  * @return void
  */
 
-$woogst_options = woogst_get_options('settings');
-$enable_gst = isset($woogst_options['enable_gst']) ? $woogst_options['enable_gst'] : 0;
+$gst_enable = woogst_get_option('gst-settings', 'enable_gst');
 ?>
 
 
 
 <div class="wrap">
+      <div class="woogst-logo-container">
+            <img src="<?php echo plugin_dir_url(dirname(__FILE__)) . 'assets/woogst-trans.png'; ?>" alt="WooGST Logo" class="woogst-logo" />
+      </div>
       <div id="gst-message" style="margin-top: 10px"></div>
       <!-- Print the page title -->
       <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
       <!-- Here are our tabs -->
       <nav class="nav-tab-wrapper">
-            <a href="?page=gst-settings" class="nav-tab <?php if ($tab === null): ?>nav-tab-active<?php endif; ?>">Tax
+            <a href="?post_type=gst-reports&page=gst-settings"
+                  class="nav-tab <?php if ($tab === null): ?>nav-tab-active<?php endif; ?>">Tax
                   settings</a>
 
-            <?php if($enable_gst): ?>
-            <a href="?page=gst-settings&tab=gst-reports"
-                  class="nav-tab <?php if ($tab === 'gst-reports'): ?>nav-tab-active<?php endif; ?>">Reports</a>      
-            <a href="?page=gst-settings&tab=gst-slabs"
-                  class="nav-tab <?php if ($tab === 'gst-slabs'): ?>nav-tab-active<?php endif; ?>">GST Slabs</a>
-            <a href="?page=gst-settings&tab=permissions"
-                  class="nav-tab <?php if ($tab === 'permissions'): ?>nav-tab-active<?php endif; ?>">Permissions</a>
+            <?php if ($gst_enable): ?>
+                  <a href="?post_type=gst-reports&page=gst-settings&tab=gst-slabs"
+                        class="nav-tab <?php if ($tab === 'gst-slabs'): ?>nav-tab-active<?php endif; ?>">GST Slabs</a>
+                  <a href="?post_type=gst-reports&page=gst-settings&tab=gst-reports"
+                        class="nav-tab <?php if ($tab === 'gst-reports'): ?>nav-tab-active<?php endif; ?>">GST Reports</a>
+                  <a href="?post_type=gst-reports&page=gst-settings&tab=gst-invoice"
+                        class="nav-tab <?php if ($tab === 'gst-invoice'): ?>nav-tab-active<?php endif; ?>">Order Invoices</a>
+                  <a href="?post_type=gst-reports&page=gst-settings&tab=permissions"
+                        class="nav-tab <?php if ($tab === 'permissions'): ?>nav-tab-active<?php endif; ?>">Permissions</a>
             <?php endif; ?>
-            <a href="?page=gst-settings&tab=status"
+            <a href="?post_type=gst-reports&page=gst-settings&tab=status"
                   class="nav-tab <?php if ($tab === 'status'): ?>nav-tab-active<?php endif; ?>">Status</a>
       </nav>
 
@@ -72,19 +78,22 @@ $enable_gst = isset($woogst_options['enable_gst']) ? $woogst_options['enable_gst
                   ?>
                   <?php switch ($tab):
                         case 'gst-slabs':
-                              gst_slabs_tab_content('gst-slabs');
+                              gst_slabs_tab_content($tab);
                               break;
                         case 'permissions':
-                              permissions_tab_content('permissions');
-                              break;
-                        case 'status':
-                              echo 'Status of the report and options';
+                              permissions_tab_content($tab);
                               break;
                         case 'gst-reports':
-                              gst_report_tab_content('gst-reports');
+                              gst_report_tab_content($tab);
+                              break;
+                        case 'status':
+                              echo 'Coming soon...';
+                              break;
+                        case 'gst-invoice':
+                              gst_invoice_tab_content($tab);
                               break;
                         default:
-                              tax_setting_tab_content('settings');
+                              tax_setting_tab_content('gst-settings');
                               break;
                   endswitch; ?>
             </div>

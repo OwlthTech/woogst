@@ -27,6 +27,9 @@ class Woogst_Validator
 
     public static function wc_compatability()
     {
+        if (wp_doing_ajax()) {
+			return;
+		}
         if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
             \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', WOOGST_PLUGIN_FILE, true);
         }
@@ -86,6 +89,9 @@ if (!function_exists('woogst_validator')) {
 if (!function_exists('is_hpos_enabled')):
     function is_hpos_enabled()
     {
+        if (wp_doing_ajax()) {
+			return;
+		}
         // Check using the built-in method
         if (class_exists('\Automattic\WooCommerce\Utilities\OrderUtil')) {
             return \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled();

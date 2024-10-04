@@ -27,11 +27,8 @@ class Woogst_Order_Table
 
       public function init()
       {
-            /**
-             * Woocommerce > Orders
-             */
+            
             $is_hpos = is_hpos_enabled();
-            error_log($is_hpos);
             if ($is_hpos) {
                   add_filter('manage_woocommerce_page_wc-orders_columns', array($this, 'woogst_custom_order_column'), 20);
             } else {

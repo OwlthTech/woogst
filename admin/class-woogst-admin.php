@@ -98,13 +98,13 @@ class Woogst_Admin
         }
         $screen_id = get_current_screen()->id ?: '';
         // var_dump($screen_id);
+        wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/woogst-admin.css', array(), $this->version, 'all');
         if ($screen_id === wc_get_page_screen_id('shop-order')) {
-            wp_enqueue_style($this->plugin_name . 'shop-order', plugin_dir_url(__FILE__) . 'css/woogst-admin.css', array(), $this->version, 'all');
         }
-        if ($screen_id === 'woocommerce_page_gst-settings') {
+        if ($screen_id === 'gst-reports_page_gst-settings') {
             wp_enqueue_style($this->plugin_name . '-tabs', plugin_dir_url(__FILE__) . 'css/woogst-tabs.css', array(), $this->version, 'all');
         }
-        if ($screen_id === 'woocommerce_page_gst-settings' && isset($_GET['tab']) && $_GET['tab'] === 'permissions') {
+        if ($screen_id === 'gst-reports_page_gst-settings' && isset($_GET['tab']) && $_GET['tab'] === 'permissions') {
             wp_enqueue_style($this->plugin_name . 'permissions', plugin_dir_url(__FILE__) . 'css/woogst-permissions.css', array(), $this->version, 'all');
         }
     }
@@ -138,14 +138,11 @@ class Woogst_Admin
         if (class_exists('WooCommerce') && $screen_id === wc_get_page_screen_id('shop-order')) {
             wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/woogst-admin.js', array('jquery'), $this->version, false);
         }
-        if ($screen_id === 'woocommerce_page_gst-settings' && isset($_GET['tab']) && $_GET['tab'] === 'gst-slabs') {
+        if ($screen_id === 'gst-reports_page_gst-settings' && isset($_GET['tab']) && $_GET['tab'] === 'gst-slabs') {
             wp_enqueue_script($this->plugin_name . '-slab', plugin_dir_url(__FILE__) . 'js/woogst-slabs.js', array('jquery'), $this->version, false);
         }
-        if ($screen_id === 'woocommerce_page_gst-settings' && !isset($_GET['tab'])) {
+        if ($screen_id === 'gst-reports_page_gst-settings' && !isset($_GET['tab'])) {
             wp_enqueue_script($this->plugin_name . '-validate', plugin_dir_url(__FILE__) . 'js/woogst-valid-gst.js', array('jquery'), $this->version, false);
-        }
-        if ($screen->post_type === 'gst-reports') {
-            wp_dequeue_script('autosave');
         }
     }
 
@@ -164,7 +161,7 @@ class Woogst_Admin
             'attributes' => __('Item Attributes', 'woogst'),
             'parent_item_colon' => __('Parent Item:', 'woogst'),
             'all_items' => __('GST Reports', 'woogst'),
-            'add_new_item' => __('Add New Item', 'woogst'),
+            'add_new_item' => __('Generate New Report', 'woogst'),
             'add_new' => __('Generate Report', 'woogst'),
             'new_item' => __('New Item', 'woogst'),
             'edit_item' => __('Edit Item', 'woogst'),
@@ -230,7 +227,7 @@ class Woogst_Admin
     public function woogst_menu()
     {
         add_submenu_page(
-            '/edit.php?post_type=gst-reports',
+            'edit.php?post_type=gst-reports',
             'GST Settings',
             'GST Settings',
             'manage_woogst_settings',
@@ -271,18 +268,22 @@ class Woogst_Admin
             set_wp_admin_notice('You are not authorized to change settings.', 'error');
             return;
         }
+        
+        $existing_settings = woogst_get_option();
+
         if (isset($tab)) {
             switch ($tab) {
-                case 'settings':
+                case 'gst-settings':
                     // Sanitize and collect the form data
                     $settings = [
                         'enable_gst' => isset($_POST['enable_gst']) ? 1 : 0,
-                        'store_gst_name' => isset($_POST['store_gst_name']) ? $_POST['store_gst_name'] : '',
-                        'store_gst_number' => isset($_POST['store_gst_number']) ? $_POST['store_gst_number'] : '',
+                        'store_gst_name' => isset($_POST['store_gst_name']) ? sanitize_text_field($_POST['store_gst_name']) : '',
+                        'store_gst_number' => isset($_POST['store_gst_number']) ? sanitize_text_field($_POST['store_gst_number']) : '',
                         'gst_checkout' => isset($_POST['gst_checkout']) ? 1 : 0,
+                        'gst_checkout_location' => isset($_POST['gst_checkout_location']) ? sanitize_text_field($_POST['gst_checkout_location']) : 'billing',
+                        'gst_checkout_email' => isset($_POST['gst_checkout_email']) ? 1 : 0,
                         'gst_billing_state_validate' => isset($_POST['gst_billing_state_validate']) ? 1 : 0
                     ];
-                    $update_settings = update_option(WOOGST_OPTION_PREFIX . $tab, $settings);
                     break;
 
                 case 'gst-reports':
@@ -293,7 +294,6 @@ class Woogst_Admin
                         'schedule_report_email_id' => isset($_POST['schedule_report_email_id']) ? sanitize_email($_POST['schedule_report_email_id']) : '',
                         'schedule_report_private' => isset($_POST['schedule_report_private']) ? 1 : 0
                     ];
-                    $update_settings = update_option(WOOGST_OPTION_PREFIX . $tab, $settings);
                     break;
 
                 case 'gst-slabs':
@@ -301,18 +301,27 @@ class Woogst_Admin
                     $settings = [
                         'gst_tax_class' => isset($_POST['gst_tax_class']) ? array_map('sanitize_text_field', $_POST['gst_tax_class']) : [],
                     ];
-                    $update_settings = update_option(WOOGST_OPTION_PREFIX . $tab, $settings);
+                    break;
+
+                case 'gst-invoice':
+                    $settings = [
+                        'gst_invoice_enable' => isset($_POST['gst_invoice_enable']) ? 1 : 0
+                    ];
                     break;
 
                 case 'permissions':
                     $this->woogst_save_permissions();
+                    break;
             }
+            // Merge new settings into the existing ones for the tab
+            $existing_settings[$tab] = isset($existing_settings[$tab]) ? array_merge($existing_settings[$tab], $settings) : $settings; // If the tab doesn't exist, use new settings directly
         }
 
-        if (isset($update_settings)) {
+        $update_settings = update_option(WOOGST_OPTION_PREFIX . 'settings', $existing_settings);
+        if ($update_settings) {
             set_wp_admin_notice('Settings are saved successfully', 'success');
+            wp_redirect($_SERVER['REQUEST_URI']);
         }
-        wp_redirect($_SERVER['REQUEST_URI']);
     }
 
     /**
@@ -518,7 +527,7 @@ class Woogst_Admin
         ?>
         <form class="woogst-report-generation" method="post" action="">
             <p><strong><?php _e('Select Month and Year to Generate Report', 'woogst'); ?></strong></p>
-
+            <hr>
             <p>
                 <label for="woogst_report_month"><?php _e('Month:', 'woogst'); ?></label>
                 <select id="woogst_report_month" name="woogst_report_month">
@@ -540,12 +549,13 @@ class Woogst_Admin
                     <?php endforeach; ?>
                 </select>
             </p>
-
+            <hr>
             <p>
                 <label for="woogst_send_report_email">
                     <input type="checkbox" id="woogst_send_report_email" name="woogst_send_report_email" value="yes">
                     <?php _e('Send report to admin email', 'woogst'); ?>
                 </label>
+            <p>Email will be sent to admin (<?php echo get_bloginfo('admin_email'); ?>)</p>
             </p>
 
             <!-- Add hidden field to store post ID -->
@@ -581,7 +591,7 @@ class Woogst_Admin
             $post_id = isset($_POST['woogst_report_post_id']) ? absint($_POST['woogst_report_post_id']) : 0;
             $month = isset($_POST['woogst_report_month']) ? sanitize_text_field($_POST['woogst_report_month']) : '';
             $year = isset($_POST['woogst_report_year']) ? sanitize_text_field($_POST['woogst_report_year']) : '';
-            $send_report_email = isset($_POST['woogst_send_report_email']) && $_POST['woogst_send_report_email'] === 'yes';
+            $send_report_email = isset($_POST['woogst_send_report_email']) && $_POST['woogst_send_report_email'] === 'yes' ? true : false;
 
 
             // Check if the required data is present
@@ -600,7 +610,7 @@ class Woogst_Admin
             wp_update_post($update_post_data);
 
             // Generate and save the report
-            $generated_report = woogst_report()->generate_save_and_send_report($month, $year, $post_id, false, $send_report_email);
+            $generated_report = woogst_report()->generate_save_and_send_report($month, $year, $post_id, false, $send_report_email, false);
 
             if ($generated_report) {
                 set_wp_admin_notice("Report generated successfully", 'success');
@@ -612,49 +622,74 @@ class Woogst_Admin
         }
     }
 
-
 }
 
 
 /**
- * Meta box for report generation
+ * Default WooGST settings.
+ *
+ * @return array Default settings grouped by tabs.
  */
-
+function get_default_settings()
+{
+    return [
+        'gst-settings' => [
+            'enable_gst' => 0,
+            'store_gst_name' => '',
+            'store_gst_number' => '',
+            'gst_checkout' => 0,
+            'gst_checkout_location' => 'after_billing',
+            'gst_checkout_email' => 0,
+            'gst_billing_state_validate' => 0,
+        ],
+        'gst-reports' => [
+            'schedule_report' => 0,
+            'schedule_report_email' => 0,
+            'schedule_report_email_id' => '',
+            'schedule_report_private' => 0,
+        ],
+        'gst-slabs' => [
+            'gst_tax_class' => [],
+        ],
+        'gst-invoice' => [
+            'gst_invoice_enable' => 0
+        ]
+        // Add more defaults for other tabs if needed
+    ];
+}
 
 /**
- * Gets options
- * @param mixed $tab
- * @return array
+ * Helper function to get WooGST settings.
+ *
+ * @param string $tab Optional. The tab from which to get settings. Default is null (returns all settings).
+ * @param string $key Optional. The key within the tab to retrieve. Default is null (returns all tab settings).
+ * @return mixed The value of the key, or the default if not set.
  */
-function woogst_get_options($tab)
+function woogst_get_option($tab = null, $key = null)
 {
-    // Get the existing settings for 'woogst_settings'
-    $woogst_settings = get_option(WOOGST_OPTION_PREFIX . $tab, []);
+    // Get the saved settings, with fallback to default settings
+    $default_settings = get_default_settings();
+    $saved_settings = get_option(WOOGST_OPTION_PREFIX . 'settings', $default_settings);
 
-    // Ensure it's an array and update the gst_tax_rates within the settings
-    if (!is_array($woogst_settings)) {
-        set_wp_admin_notice('option ' . WOOGST_OPTION_PREFIX . $tab . ' is not an array', 'error');
-        wp_redirect($_SERVER['REQUEST_URI']);
-        exit;
+    // Merge saved settings with default settings, where defaults will fill missing values
+    // $settings = array_merge_recursive($default_settings, $saved_settings);
+
+    if (!is_null($tab)) {
+        if (isset($saved_settings[$tab])) {
+            if (!is_null($key)) {
+                // Return the key value if set, otherwise return the default
+                return isset($saved_settings[$tab][$key]) ? $saved_settings[$tab][$key] : $default_settings[$tab][$key];
+            }
+            return $saved_settings[$tab]; // Return the entire tab settings
+        }
+        // Return the default tab settings if no saved settings are found for this tab
+        return isset($default_settings[$tab]) ? $default_settings[$tab] : null;
     }
-    return $woogst_settings;
+
+    // Return the full settings array (merged) if no tab is specified
+    return $saved_settings;
 }
 
-
-function woogst_get_option_key($tab, $key)
-{
-    if (!isset($key)) {
-        wp_die('Please specify the key to retrieve', 'error');
-    }
-    // Get the existing settings for 'woogst_settings'
-    $woogst_settings = get_option(WOOGST_OPTION_PREFIX . $tab, []);
-    $value_for_key = $woogst_settings[$key];
-    // Ensure it's an array and update the gst_tax_rates within the settings
-    if (!isset($value_for_key)) {
-        wp_die('Error retrieving option: ' . $tab . ' key: ' . $key . ' --- Found: ' . $value_for_key, 'error');
-    }
-    return $value_for_key;
-}
 
 /**
  * Woo Tax Create
@@ -675,7 +710,7 @@ function woogst_create_gst_tax_class()
     $woo_tax_classes = WC_Tax::get_tax_classes();
 
     // Load saved plugin options for the 'gst-slabs' tab
-    $settings = woogst_get_options('gst-slabs'); // Fetch the current gst-slabs settings
+    $settings = woogst_get_option('gst-slabs'); // Fetch the current gst-slabs settings
 
     // Ensure the gst_tax_class array exists in settings
     if (!isset($settings['gst_tax_class'])) {

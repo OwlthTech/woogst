@@ -108,6 +108,12 @@ class Woogst_Order_Edit {
                         wp_redirect($_SERVER['HTTP_REFERER']);
                         exit;
                   }
+                  if(!current_user_can('manage_woogst_settings')) {
+                        // Show an error and stop execution
+                        WC_Admin_Meta_Boxes::add_error(__('You are not allowed to change gst details. Please contact administrator.', 'woocommerce'));
+                        wp_redirect($_SERVER['HTTP_REFERER']);
+                        exit;
+                  }
                   if ($is_hpos_enabled) {
                         $order->update_meta_data('_billing_claim_gst', 1);
                         $order->update_meta_data('_billing_gst_number', $gst_number);

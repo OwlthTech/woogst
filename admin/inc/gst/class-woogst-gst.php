@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
 }
 
 
-class Gst
+class Woogst_Gst
 {
       /**
        * Gets an instance of this object.
@@ -64,14 +64,14 @@ class Gst
 // The main instance
 if (!function_exists('woogst_gst')) {
       /**
-       * Return instance of Gst class
+       * Return instance of Woogst_Gst class
        *
        * @since 1.0.0
        *
-       * @return Gst
+       * @return Woogst_Gst
        */
       function woogst_gst()
       {//phpcs:ignore
-            return Gst::get_instance();
+            return Woogst_Gst::get_instance();
       }
 }

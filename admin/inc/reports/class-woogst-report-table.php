@@ -63,6 +63,7 @@ class Woogst_Report_Table
             unset($columns['comments']);
 
             // Add custom columns
+            $columns['time_created'] = __('Report Generated At', 'woogst');
             $columns['report_stats'] = __('Report Stats', 'woogst');
             $columns['email_status'] = __('Email Status', 'woogst');
             $columns['report_duration'] = __('Report Duration', 'woogst');
@@ -82,10 +83,17 @@ class Woogst_Report_Table
       {
             $woogst_option = get_post_meta($post_id, 'woogst_report', true);
             switch ($column) {
+                  case 'time_created':
+                        $report_create_date = get_the_date('d-m-Y H:i', $post_id);
+                        echo $report_create_date;
+                        break;
+
                   case 'email_status':
-                        // Fetch the email_status from post meta
-                        $email_status = isset($woogst_option['sent_email']) ? "✔️" : "❌";
-                        echo $email_status;
+                        $email_data = isset($woogst_option['sent_email']) && is_array($woogst_option['sent_email']) ? $woogst_option['sent_email'] : '';
+                        $admin_email = isset($email_data['admin_email_status']) ? "✔️" : "❌"; 
+                        $additional_email = isset($email_data['additional_email_status']) ? "✔️" : "❌"; 
+                        $report_type = isset($woogst_option['report_type']) && $woogst_option['report_type'] ? 'Auto generated' : 'Generated on request';
+                        echo "<b>Type:</b> {$report_type}<br/><b>Admin email:</b> {$admin_email}<br/><b>Other email:</b> {$additional_email}";
                         break;
 
                   case 'report_duration':

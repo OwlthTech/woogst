@@ -1,115 +1,80 @@
-=== Plugin Name ===
-Contributors: (this should be a list of wordpress.org userid's)
-Donate link: https://owlth.tech/
-Tags: comments, spam
-Requires at least: 3.0.1
-Requires Plugins: 
-Tested up to: 3.4
-Stable tag: 4.3
+=== WooGST ===
+Contributors: Owlth Tech
+Donate link: https://owlth.tech
+Tags: gst, woocommerce gst, tax, indian gst, invoice, woocommerce tax, tax reports
+Requires at least: 5.5
+Tested up to: 6.6.0
+Requires PHP: 8.0
+WC requires at least: 4.0
+WC tested up to: 9.0
+Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Here is a short description of the plugin.  This should be no more than 150 characters.  No markup here.
+WooGST helps WooCommerce store owners in India to integrate GST (Goods and Services Tax) for better compliance with tax regulations. Generate GST-compliant invoices, apply GST on checkout, and schedule monthly GST reports.
 
 == Description ==
 
-This is the long description.  No limit, and you can use Markdown (as well as in the following sections).
+**WooGST** is a feature-rich plugin designed for WooCommerce store owners in India. It simplifies GST tax compliance by enabling automated tax management at checkout, generating GST-compliant invoices, and providing detailed monthly tax reports. 
 
-For backwards compatibility, if this section is missing, the full length of the short description will be used, and
-Markdown parsed.
+= Features =
 
-A few notes about the sections above:
-
-*   "Contributors" is a comma separated list of wp.org/wp-plugins.org usernames
-*   "Tags" is a comma separated list of tags that apply to the plugin
-*   "Requires at least" is the lowest version that the plugin will work on
-*   "Tested up to" is the highest version that you've *successfully used to test the plugin*. Note that it might work on
-higher versions... this is just the highest one you've verified.
-*   Stable tag should indicate the Subversion "tag" of the latest stable version, or "trunk," if you use `/trunk/` for
-stable.
-
-    Note that the `readme.txt` of the stable tag is the one that is considered the defining one for the plugin, so
-if the `/trunk/readme.txt` file says that the stable tag is `4.3`, then it is `/tags/4.3/readme.txt` that'll be used
-for displaying information about the plugin.  In this situation, the only thing considered from the trunk `readme.txt`
-is the stable tag pointer.  Thus, if you develop in trunk, you can update the trunk `readme.txt` to reflect changes in
-your in-development version, without having that information incorrectly disclosed about the current stable version
-that lacks those changes -- as long as the trunk's `readme.txt` points to the correct stable tag.
-
-    If no stable tag is provided, it is assumed that trunk is stable, but you should specify "trunk" if that's where
-you put the stable version, in order to eliminate any doubt.
+* Add GSTIN fields during checkout.
+* Automatically calculate and apply GST based on customer’s location and selected tax slabs.
+* Display GST details in order emails and invoices.
+* Configure GST settings from an easy-to-use admin interface.
+* Generate monthly GST reports for tax filing.
+* Schedule automatic email reports to store admins and account manager/store manager.
+* Supports different tax classes and rates for different product categories.
+* Full compatibility with WooCommerce core.
 
 == Installation ==
 
-This section describes how to install the plugin and get it working.
-
-e.g.
-
-1. Upload `woogst.php` to the `/wp-content/plugins/` directory
-1. Activate the plugin through the 'Plugins' menu in WordPress
-1. Place `<?php do_action('plugin_name_hook'); ?>` in your templates
+1. Download the plugin zip file.
+2. Go to your WordPress Dashboard, navigate to **Plugins > Add New**.
+3. Click **Upload Plugin**, then select the zip file you downloaded.
+4. Click **Install Now**, then **Activate** the plugin.
+5. Go to **WooCommerce > WooGST Settings** to configure the plugin.
 
 == Frequently Asked Questions ==
 
-= A question that someone might have =
+= Is WooGST compatible with the latest version of WooCommerce? =
+Yes, WooGST is tested with the latest version of WooCommerce and WordPress.
 
-An answer to that question.
+= Can I send automated monthly GST reports to my accountant? =
+Yes, WooGST allows you to schedule monthly GST reports via email, directly from the plugin’s admin settings.
 
-= What about foo bar? =
+= How do I configure GST tax rates? =
+You can configure GST tax rates by navigating to **WooCommerce > WooGST > GST Slabs** and defining your tax classes and corresponding rates.
 
-Answer to foo bar dilemma.
+= Does WooGST display GST information on invoices and emails? =
+Yes, WooGST integrates GST fields into WooCommerce emails and displays the store's GSTIN and trade name on invoices.
 
 == Screenshots ==
 
-1. This screen shot description corresponds to screenshot-1.(png|jpg|jpeg|gif). Note that the screenshot is taken from
-the /assets directory or the directory that contains the stable readme.txt (tags or trunk). Screenshots in the /assets
-directory take precedence. For example, `/assets/screenshot-1.png` would win over `/tags/4.3/screenshot-1.png`
-(or jpg, jpeg, gif).
-2. This is the second screen shot
+1. **Admin settings panel**: Easy-to-use admin panel to configure GST settings.
+2. **GST fields on checkout**: Add GSTIN and Trade Name fields at checkout.
+3. **GST invoice**: Displays GST details in customer invoices and emails.
+4. **Scheduled GST reports**: Generate and send monthly GST reports via email.
+5. **GST Tax Class Settings**: Customize tax slabs for your store.
 
 == Changelog ==
 
-= 1.0 =
-* A change since the previous version.
-* Another change.
-
-= 0.5 =
-* List versions from most recent at top to oldest at bottom.
+= 1.0.0 =
+* Initial release.
+* GST integration for WooCommerce.
+* Add GSTIN fields in checkout.
+* GST reports and scheduled email feature.
 
 == Upgrade Notice ==
 
-= 1.0 =
-Upgrade notices describe the reason a user should upgrade.  No more than 300 characters.
+= 1.0.0 =
+First release.
 
-= 0.5 =
-This version fixes a security related bug.  Upgrade immediately.
+== License ==
 
-== Arbitrary section ==
+This plugin is licensed under the [GPLv2](http://www.gnu.org/licenses/gpl-2.0.html). You can freely modify and distribute the plugin under the terms of the GPLv2 license.
 
-You may provide arbitrary sections, in the same format as the ones above.  This may be of use for extremely complicated
-plugins where more information needs to be conveyed that doesn't fit into the categories of "description" or
-"installation."  Arbitrary sections will be shown below the built-in sections outlined above.
+== Documentation & Support ==
 
-== A brief Markdown Example ==
-
-Ordered list:
-
-1. Some feature
-1. Another feature
-1. Something else about the plugin
-
-Unordered list:
-
-* something
-* something else
-* third thing
-
-Here's a link to [WordPress](http://wordpress.org/ "Your favorite software") and one to [Markdown's Syntax Documentation][markdown syntax].
-Titles are optional, naturally.
-
-[markdown syntax]: http://daringfireball.net/projects/markdown/syntax
-            "Markdown is what the parser uses to process much of the readme file"
-
-Markdown uses email style notation for blockquotes and I've been told:
-> Asterisks for *emphasis*. Double it up  for **strong**.
-
-`<?php code(); // goes in backticks ?>`
+For full documentation and support, please visit [Owlth Tech](https://owlth.tech/woogst-docs) or contact our support team at support@owlth.tech.

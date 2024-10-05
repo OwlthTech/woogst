@@ -88,8 +88,14 @@ class Woogst_Report
         }
     }
 
-    public function generate_save_and_send_report($month = null, $year = null, $report_id = null, $schedule = true, $send_report_email = true, $to_additional_email = true)
-    {
+    public function generate_save_and_send_report(
+        $month = null,
+        $year = null,
+        $report_id = null,
+        $schedule = true,
+        $send_report_email = true,
+        $to_additional_email = true
+    ) {
         // If no month and year are passed, use the previous month and current year as default
         if (is_null($month) && is_null($year)) {
             $prev = new DateTime('first day of last month');
@@ -111,7 +117,7 @@ class Woogst_Report
         $email_body = format_statistics_for_email($order_stats);
 
         // if checked in generation form or scheduled then send email
-        if (!$schedule || !$send_report_email) {
+        if ($send_report_email || $schedule) {
             $email_status = send_report_mail($title, $email_body, $report_csv['file_path'], $to_additional_email);
         }
         // Extract order IDs and other relevant details from order data for storage
@@ -128,10 +134,14 @@ class Woogst_Report
                 'report_csv_url' => esc_url_raw($report_csv['file_url']),
                 'from' => $orders['from'],
                 'to' => $orders['to'],
-                'sent_email' => isset($email_status) ? 1 : 0,
+                'sent_email' => $send_report_email && isset($email_status) && is_array($email_status) ? $email_status : array(
+                    'admin_email_status' => null,
+                    'additional_email_status' => null
+                ),
                 'report_total' => wc_format_decimal($order_stats['total_order_amount'], 2),
                 'report_total_tax' => $order_stats['total_tax_amount_by_label'],
-                'report_orders' => $simplified_order_data
+                'report_orders' => $simplified_order_data,
+                'report_type' => $schedule
             )
         );
 
@@ -157,7 +167,13 @@ class Woogst_Report
         if ($schedule) {
             wp_schedule_single_event($next_schedule_timestamp, 'woogst_send_monthly_tax_report');
         }
-        return true;
+        return array(
+            'email_status' => $email_status,
+            'is_scheduled' => $schedule,
+            'report_id' => $report_id,
+            'report_meta' => $report_meta,
+            'report_csv' => $report_csv
+        );
     }
 }
 
@@ -434,22 +450,20 @@ if (!function_exists('send_report_mail')) {
         // Send
         $sent_admin = wp_mail($admin_email, $subject, $email_body, $headers, $attachments);
         // Log
-        if ($sent_admin) {
-            log_report_status('Report email sent to admin');
-        }
+        log_report_status('Report email status for admin: ' . $sent_admin);
 
         // Additional email
         $additional_email = woogst_get_option('gst-reports', 'schedule_report_email_id');
         if (is_email($additional_email) && !empty($additional_email) && $to_additional_email) {
             $sent_additional = wp_mail($additional_email, $subject, $email_body, $headers, $attachments);
-            if ($sent_additional) {
-                log_report_status('Report email sent to additional email id :' . $additional_email);
-            }
+            log_report_status('Report email status for additional email id (' . $additional_email . ') :' . $sent_additional);
         }
 
-        if ($sent_admin) {
-            return true;
-        }
+        return array(
+            'admin_email_status' => $sent_admin,
+            'additional_email_status' => $sent_additional
+        );
+
     }
 }
 

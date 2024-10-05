@@ -11,9 +11,11 @@ jQuery(document).ready(function ($) {
                   data: {
                         action: 'woogst_create_gst_tax_class',
                         gst_tax_class: gstClass,
-                        gst_tax_rate: taxRate
+                        gst_tax_rate: taxRate,
+                        security: woogst_slab_ajax.nonce
                   },
                   beforeSend: function () {
+                        console.log(woogst_slab_ajax);
                         // Disable the button while the request is processing
                         button.attr('disabled', 'disabled').text('Processing...');
                   },

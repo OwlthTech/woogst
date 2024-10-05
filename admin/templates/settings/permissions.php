@@ -16,6 +16,7 @@ function permissions_tab_content($tab)
       <div class="wrap">
             <h1><?php esc_html_e('Woogst Permissions', 'woogst'); ?></h1>
             <form id="woogst-permissions-form" method="post">
+                  <?php wp_nonce_field('woogst_settings_save', 'woogst_settings_nonce'); ?>
                   <input type="hidden" name="tab" value="<?php echo $tab; ?>">
                   <input type="hidden" name="woogst_form_submitted" value="yes">
                   <table class="form-table permission-table">

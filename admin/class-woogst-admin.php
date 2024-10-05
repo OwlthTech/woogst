@@ -67,7 +67,7 @@ class Woogst_Admin
 
     public function add_settings_link($links)
     {
-        $settings_link = '<a href="' . admin_url('admin.php?page=gst-settings') . '">' . __('Settings') . '</a>';
+        $settings_link = '<a href="' . admin_url('edit.php?post_type=gst-reports&page=gst-settings') . '">' . __('Settings') . '</a>';
         array_unshift($links, $settings_link);
         return $links;
     }
@@ -79,19 +79,6 @@ class Woogst_Admin
      */
     public function enqueue_styles()
     {
-
-        /**
-         * This function is provided for demonstration purposes only.
-         *
-         * An instance of this class should be passed to the run() function
-         * defined in Woogst_Loader as all of the hooks are defined
-         * in that particular class.
-         *
-         * The Woogst_Loader will then create the relationship
-         * between the defined hooks and the functions defined in this
-         * class.
-         */
-
         $has_woocomemrce = class_exists('WooCommerce');
         if (!$has_woocomemrce) {
             return;
@@ -116,18 +103,6 @@ class Woogst_Admin
      */
     public function enqueue_scripts($hook)
     {
-
-        /**
-         * This function is provided for demonstration purposes only.
-         *
-         * An instance of this class should be passed to the run() function
-         * defined in Woogst_Loader as all of the hooks are defined
-         * in that particular class.
-         *
-         * The Woogst_Loader will then create the relationship
-         * between the defined hooks and the functions defined in this
-         * class.
-         */
         $has_woocomemrce = class_exists('WooCommerce');
         if (!$has_woocomemrce) {
             return;
@@ -140,6 +115,10 @@ class Woogst_Admin
         }
         if ($screen_id === 'gst-reports_page_gst-settings' && isset($_GET['tab']) && $_GET['tab'] === 'gst-slabs') {
             wp_enqueue_script($this->plugin_name . '-slab', plugin_dir_url(__FILE__) . 'js/woogst-slabs.js', array('jquery'), $this->version, false);
+            wp_localize_script($this->plugin_name . '-slab', 'woogst_slab_ajax', array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('woogst_gst_tax_nonce'), // Creates a nonce for your slab actions
+            ));
         }
         if ($screen_id === 'gst-reports_page_gst-settings' && !isset($_GET['tab'])) {
             wp_enqueue_script($this->plugin_name . '-validate', plugin_dir_url(__FILE__) . 'js/woogst-valid-gst.js', array('jquery'), $this->version, false);
@@ -268,7 +247,12 @@ class Woogst_Admin
             set_wp_admin_notice('You are not authorized to change settings.', 'error');
             return;
         }
-        
+
+        if (!isset($_POST['woogst_settings_nonce']) || !wp_verify_nonce($_POST['woogst_settings_nonce'], 'woogst_settings_save')) {
+            set_wp_admin_notice('Security check failed. Please try again.', 'error');
+            return;
+        }
+
         $existing_settings = woogst_get_option();
 
         if (isset($tab)) {
@@ -332,6 +316,12 @@ class Woogst_Admin
         // Check that the current user has permission to manage Woogst settings
         if (!current_user_can('manage_woogst_settings')) {
             set_wp_admin_notice('Unauthorized request.', 'error');
+            wp_redirect($_SERVER['REQUEST_URI']);
+            exit;
+        }
+
+        if (!isset($_POST['woogst_settings_nonce']) || !wp_verify_nonce($_POST['woogst_settings_nonce'], 'woogst_settings_save')) {
+            set_wp_admin_notice('Security check failed when saving settings. Please try again.', 'error');
             return;
         }
 
@@ -526,6 +516,12 @@ class Woogst_Admin
         $years = range($current_year, 2017);
         ?>
         <form class="woogst-report-generation" method="post" action="">
+
+            <?php wp_nonce_field('woogst_generate_report_nonce', 'woogst_report_nonce'); ?>
+            <input type="hidden" name="action" value="woogst_generate_report">
+            <input type="hidden" name="woogst_report_generation_request" value="yes">
+            <input type="hidden" name="woogst_report_post_id" value="<?php echo esc_attr($post->ID); ?>">
+
             <p><strong><?php _e('Select Month and Year to Generate Report', 'woogst'); ?></strong></p>
             <hr>
             <p>
@@ -558,67 +554,76 @@ class Woogst_Admin
             <p>Email will be sent to admin (<?php echo get_bloginfo('admin_email'); ?>)</p>
             </p>
 
-            <!-- Add hidden field to store post ID -->
-            <input type="hidden" name="woogst_report_post_id" value="<?php echo esc_attr($post->ID); ?>">
-
             <p>
                 <button type="submit" class="button button-primary">
                     <?php _e('Generate Report', 'woogst'); ?>
                 </button>
             </p>
 
-            <!-- Include a nonce field for security -->
-            <?php wp_nonce_field('woogst_generate_report_nonce', 'woogst_report_nonce'); ?>
         </form>
-
-        <?php
-        echo '<style type="text/css">
+        <style type="text/css">
             #titlediv {
                 display: none;
             }
+
             .page-title-action {
                 display: none !important;
             }
-        </style>';
+        </style>
+        <?php
     }
 
     function woogst_generate_report()
     {
-        // Check the nonce for security
-        if (isset($_POST['woogst_report_nonce']) && wp_verify_nonce($_POST['woogst_report_nonce'], 'woogst_generate_report_nonce')) {
+        // Ensure the form was submitted correctly
+        if (!isset($_POST['woogst_report_generation_request']) || $_POST['woogst_report_generation_request'] !== 'yes') {
+            return;
+        }
 
-            // Sanitize and validate the input data
-            $post_id = isset($_POST['woogst_report_post_id']) ? absint($_POST['woogst_report_post_id']) : 0;
-            $month = isset($_POST['woogst_report_month']) ? sanitize_text_field($_POST['woogst_report_month']) : '';
-            $year = isset($_POST['woogst_report_year']) ? sanitize_text_field($_POST['woogst_report_year']) : '';
-            $send_report_email = isset($_POST['woogst_send_report_email']) && $_POST['woogst_send_report_email'] === 'yes' ? true : false;
+        if (!isset($_POST['woogst_report_nonce']) || !wp_verify_nonce($_POST['woogst_report_nonce'], 'woogst_generate_report_nonce')) {
+            set_wp_admin_notice('Security verification failed when generating the report', 'error');
+            wp_redirect($_SERVER['HTTP_REFERER']);
+            exit;
+        }
+        // Sanitize and validate the input data
+        $post_id = isset($_POST['woogst_report_post_id']) ? absint($_POST['woogst_report_post_id']) : 0;
+        $month = isset($_POST['woogst_report_month']) ? sanitize_text_field($_POST['woogst_report_month']) : '';
+        $year = isset($_POST['woogst_report_year']) ? sanitize_text_field($_POST['woogst_report_year']) : '';
+        $send_report_email = isset($_POST['woogst_send_report_email']) ? true : false;
 
+        // Check if the required data is present
+        if (empty($post_id) || empty($month) || empty($year)) {
+            set_wp_admin_notice(__('Please select a valid month, year, and post.', 'woogst'), 'error');
+            wp_redirect($_SERVER['REQUEST_URI']);
+            exit;
+        }
 
-            // Check if the required data is present
-            if (empty($post_id) || empty($month) || empty($year)) {
-                set_wp_admin_notice(__('Please select a valid month, year, and post.', 'woogst'), 'error');
-                wp_redirect($_SERVER['REQUEST_URI']);
-                exit;
-            }
+        // If post_id is provided, update the post directly
+        $update_post_data = array(
+            'ID' => $post_id,
+            'post_title' => '',
+            'post_content' => ''
+        );
+        wp_update_post($update_post_data);
 
-            // If post_id is provided, update the post directly
-            $update_post_data = array(
-                'ID' => $post_id,
-                'post_title' => '',
-                'post_content' => ''
-            );
-            wp_update_post($update_post_data);
+        // Generate and save the report
+        $generated_report = woogst_report()->generate_save_and_send_report(
+            $month, 
+            $year, 
+            $post_id, 
+            false, 
+            $send_report_email, 
+            false
+        );
 
-            // Generate and save the report
-            $generated_report = woogst_report()->generate_save_and_send_report($month, $year, $post_id, false, $send_report_email, false);
-
-            if ($generated_report) {
-                set_wp_admin_notice("Report generated successfully", 'success');
-                wp_redirect(admin_url('post.php?post=' . $post_id) . '&action=edit');
-                exit;
-            } else {
-                set_wp_admin_notice("Report generation failed", 'error');
-            }
+        if (isset($generated_report) && is_array($generated_report)) {
+            set_wp_admin_notice("Report generated successfully", 'success');
+            wp_redirect(admin_url('post.php?post=' . $generated_report['report_id']) . '&action=edit');
+            exit;
+        } else {
+            set_wp_admin_notice("Report generation failed, please try again", 'error');
+            wp_redirect($_SERVER['HTTP_REFERER']);
+            exit;
         }
     }
 
@@ -697,6 +702,16 @@ function woogst_get_option($tab = null, $key = null)
 
 function woogst_create_gst_tax_class()
 {
+    if (!isset($_POST['security']) || !wp_verify_nonce($_POST['security'], 'woogst_gst_tax_nonce')) {
+        wp_send_json_error(['message' => 'Security check failed.']);
+        return;
+    }
+
+    if (!current_user_can('manage_woocommerce')) {
+        wp_send_json_error(['message' => 'You do not have permission to perform this action.']);
+        return;
+    }
+
     // Ensure the required POST data is available
     if (!isset($_POST['gst_tax_class']) || !isset($_POST['gst_tax_rate'])) {
         wp_send_json_error(['message' => 'Required data missing.']);
@@ -778,7 +793,7 @@ function woogst_create_gst_tax_rates($gst_class, $input_tax_rate)
 
     if (!in_array($gst_class, WC_Tax::get_tax_classes())) {
         set_wp_admin_notice($gst_class . ' tax class not found', 'error');
-        wp_redirect(get_admin_url(null, '/admin.php?page=gst-settings'));
+        wp_redirect(get_admin_url(null, 'edit.php?post_type=gst-reports&page=gst-settings'));
         exit;
     }
 

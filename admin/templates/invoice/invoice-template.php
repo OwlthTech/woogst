@@ -26,7 +26,7 @@ $logo = wp_get_attachment_image_src($custom_logo_id, 'full');
 
 <head>
     <meta charset="utf-8" />
-    <title>A simple, clean, and responsive HTML invoice template</title>
+    <title><?php echo $order->get_id(); ?> - Invoice - <?php echo get_bloginfo('name'); ?></title>
 
     <style>
         .invoice-box {
